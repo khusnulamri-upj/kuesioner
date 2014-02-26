@@ -16,7 +16,12 @@ class MKuesioner extends CI_Model {
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {
-            return $query->result();
+            //return $query->result();
+            $a = $query->result();
+            $a = array_merge($a,$query->result());
+            //print_r($a);
+            //exit();
+            return $a;
         }
         return FALSE;
     }
@@ -55,14 +60,29 @@ class MKuesioner extends CI_Model {
     function get_form($id_kuesioner) {
         $db_dflt = $this->load->database('default', TRUE);
 
-        $sql = "SELECT * FROM master_kuesioner mk "
-                . "LEFT OUTER JOIN master_pertanyaan mp ON mk.id_kuesioner = mp.id_kuesioner "
-                . "LEFT OUTER JOIN ( "
-                . "SELECT p.id_grup_pilihan, count(*) AS jml_pilihan "
-                . "FROM pilihan p "
-                . "GROUP BY p.id_grup_pilihan "
-                . ") pp ON mp.id_grup_pilihan = pp.id_grup_pilihan "
-                . "WHERE mk.id_kuesioner = ".$id_kuesioner;
+        $sql = "SELECT * FROM (
+            SELECT aa.id_pertanyaan, aa.id_kuesioner, aa.isi, aa.tipe, aa.id_kategori, aa.id_grup_pilihan, aa.id_grup_pilihan2, aa.jml_pilihan, aa.jml_pilihan2, IF(aa.order_no > 0, aa.order_no, 0) AS order_no FROM (
+            SELECT mp.*, pp.jml_pilihan, pp2.jml_pilihan2,
+            IF(mp.id_kategori <= 0,((SELECT MAX(tmp.id_kategori) FROM master_pertanyaan tmp)*10+3),(mp.id_kategori*10+2)) AS order_no
+            FROM master_pertanyaan mp
+            LEFT OUTER JOIN ( 
+            SELECT p.id_grup_pilihan, count(*) AS jml_pilihan 
+            FROM pilihan p 
+            GROUP BY p.id_grup_pilihan 
+            ) pp ON mp.id_grup_pilihan = pp.id_grup_pilihan
+            LEFT OUTER JOIN ( 
+            SELECT p2.id_grup_pilihan, count(*) AS jml_pilihan2 
+            FROM pilihan p2 
+            GROUP BY p2.id_grup_pilihan 
+            ) pp2 ON mp.id_grup_pilihan2 = pp2.id_grup_pilihan 
+            WHERE mp.id_kuesioner = ".$id_kuesioner.") aa
+            UNION
+            SELECT NULL, NULL, kp.nama, 'kategori', kp.id_kategori, NULL, NULL, NULL, NULL, IF(kp.id_kategori <= 0,((SELECT MAX(tmp2.id_kategori) FROM master_pertanyaan tmp2)*10+3),(kp.id_kategori*10+1)) AS order_no
+            FROM master_pertanyaan mp
+            JOIN kategori_pertanyaan kp ON mp.id_kategori = kp.id_kategori
+            WHERE mp.id_kuesioner = ".$id_kuesioner."
+            GROUP BY mp.id_kategori) aaa
+            ORDER BY aaa.order_no ASC, aaa.id_pertanyaan";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {
@@ -76,20 +96,32 @@ class MKuesioner extends CI_Model {
         $this->db->trans_start();
         
         foreach ($arr_jawaban as $key => $value) {
-            if ($value->tipe == 'isian') {
-                $col_jawaban = 'jawaban_isian';
-                $jawaban = $value->jawaban;
-            } else {
-                $col_jawaban = 'jawaban_pilihan';
-                $jawaban = intval($value->jawaban);
-            }
             $data_mysql = array(
+                'id_periode' => $id_periode,
+                'id_kuesioner' => $id_kuesioner,
+                'id_pertanyaan' => $key,
+                'respondent_id' => $respondent_id);
+            if ($value->tipe == 'isian') {
+                /*$col_jawaban = 'jawaban_isian';
+                $jawaban = $value->jawaban;*/
+                $data_mysql['jawaban_isian'] = $value->jawaban;
+            } else {
+                /*$col_jawaban = 'jawaban_pilihan';
+                $jawaban = intval($value->jawaban);*/
+                if (isset($value->jawaban)) {
+                    $data_mysql['jawaban_pilihan'] = $value->jawaban;
+                }
+                if (isset($value->jawaban2)) {
+                    $data_mysql['jawaban_pilihan2'] = $value->jawaban2;
+                }
+            }
+            /*$data_mysql = array(
                 'id_periode' => $id_periode,
                 'id_kuesioner' => $id_kuesioner,
                 'id_pertanyaan' => $key,
                 'respondent_id' => $respondent_id,
                 $col_jawaban => $jawaban,
-            );
+            );*/
             $this->db->insert('jawaban', $data_mysql);
         }
         

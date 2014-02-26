@@ -38,58 +38,68 @@ class Kuesioner extends CI_Controller {
         $id_periode = $arr_dec[0];
         $id_kuesioner = $arr_dec[1];
         $this->load->model('mKuesioner');
-        if ((empty($enc_from_lists)) || (!$this->mKuesioner->is_id_kuesioner_exist($id_kuesioner))) {
+        if ((empty($enc_from_lists)) || (empty($id_periode)) || (!$this->mKuesioner->is_id_kuesioner_exist($id_kuesioner))) {
             redirect(site_url('kuesioner/lists'));
         }
         $kuesioner_data = $this->mKuesioner->get_kuesioner_data($id_kuesioner);
         $str_respondent_id = $kuesioner_data->respondent_id;
         $is_function = strpos($str_respondent_id, '()');
-
         if ($is_function === FALSE) {
-            $respondent_id = $respondent_id;
+            $respondent_id = $str_respondent_id;
         } else {
             $str_respondent_id = str_replace('()', '', $str_respondent_id);
             $respondent_id = $str_respondent_id();
         }
-        
+        //VARIABLE REQUIRED FOR SAVING TO DATABASE
         $enc_id_periode = $this->encrypt->encode($id_periode);
         $enc_str_id_periode = $this->encrypt->encode('id_periode');
         $html_hidden = '<input type="hidden" name="'.$enc_str_id_periode.'" value="'.$enc_id_periode.'">';
-        
         $enc_id_kuesioner = $this->encrypt->encode($id_kuesioner);
         $enc_str_id_kuesioner = $this->encrypt->encode('id_kuesioner');
         $html_hidden .= '<input type="hidden" name="'.$enc_str_id_kuesioner.'" value="'.$enc_id_kuesioner.'">';
-        
         $enc_respondent_id = $this->encrypt->encode($respondent_id);
         $enc_str_respondent_id = $this->encrypt->encode('respondent_id');
         $html_hidden .= '<input type="hidden" name="'.$enc_str_respondent_id.'" value="'.$enc_respondent_id.'">';
+        //VARIABLE CUSTOM FOR SAVING TO DATABASE
         
         $data['html_form'] = '<form method="POST" action="'.site_url('kuesioner/finish').'">'.$html_hidden;
-        
         $list_pertanyaan = $this->mKuesioner->get_form($id_kuesioner);
         $index = 0;
-        $html_pertanyaan = '<table>';
+        $html_pertanyaan = '<table border="1">';
         foreach($list_pertanyaan as $obj) {
-            if (!empty($obj->isi)) {
+            if (!empty($obj->tipe)) {
                 $html_pertanyaan .= '<tr>';
-                $html_pertanyaan .= '<td align="right">'.++$index.'</td><td>'.$obj->isi.'</td>';
-                $enc_id_pertanyaan = $this->encrypt->encode('tanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
-                if ($obj->tipe == 'pilihan') {
-                    $html_radio = '';
-                    for ($i = 1; $i <= $obj->jml_pilihan; $i++) {
-                        $html_radio .= '<input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$i.'">';
-                    }
-                    $html_pertanyaan .= '<td>'.$html_radio.'</td>';
+                if ($obj->tipe == 'kategori') {
+                    $html_pertanyaan .= '<td align="right">&nbsp;</td><td><b>'.$obj->isi.'</b></td>';
                 } else {
+                    $html_pertanyaan .= '<td align="right">'.++$index.'</td><td>'.$obj->isi.'</td>';
+                }
+                if ($obj->tipe == 'pilihan') {
+                    $enc_id_pertanyaan = $this->encrypt->encode('pilihantanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
+                    $html_radio = '';
+                    //AMRNEEDTOIMPROVE : value=$i ??
+                    for ($i = 1; $i <= $obj->jml_pilihan; $i++) {
+                        $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$i.'"></td>';
+                    }
+                    if (!empty($obj->jml_pilihan2)) {
+                        $enc_id_pertanyaan = $this->encrypt->encode('pilihan2tanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
+                        //$html_radio .= '</td><td>&nbsp;</td><td>';
+                        $html_radio .= '<td>&nbsp;</td>';
+                        for ($i = 1; $i <= $obj->jml_pilihan2; $i++) {
+                            $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$i.'"></td>';
+                        }
+                    }
+                    //$html_pertanyaan .= '<td>'.$html_radio.'</td>';
+                    $html_pertanyaan .= $html_radio;
+                } else if ($obj->tipe == 'isian') {
+                    $enc_id_pertanyaan = $this->encrypt->encode('tanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
                     $html_pertanyaan .= '</tr><tr><td>&nbsp;</td><td><textarea name="'.$enc_id_pertanyaan.'"></textarea></td>';
                 }
                 $html_pertanyaan .= '</tr>';
             }
         }
         $html_pertanyaan .= '</table>';
-        
         $data['html_form'] .= $html_pertanyaan.'<input type="submit" value="Simpan"></form>';
-        
         $this->load->view('kuesioner/form_kuesioner',$data);
     }
     
@@ -115,16 +125,22 @@ class Kuesioner extends CI_Controller {
             }
             if ($is_pertanyaan !== FALSE) {
                 $no = explode('tanya',$index);
-                $arr_jawaban[$no[1]] = new stdClass;
-                $arr_jawaban[$no[1]]->jawaban = $value;
+                if (!array_key_exists($no[1], $arr_jawaban)) {
+                    $arr_jawaban[$no[1]] = new stdClass;
+                }
+                if ($no[0] === 'pilihan2') {
+                    $arr_jawaban[$no[1]]->jawaban2 = $value;
+                } else {
+                    $arr_jawaban[$no[1]]->jawaban = $value;
+                }
                 $arr_jawaban[$no[1]]->tipe = $no[2];
             }
         }
         $this->load->model('mKuesioner');
         $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban);
-        print_r($id_periode);
-        print_r($id_kuesioner);
-        print_r($respondent_id);
+        //print_r($id_periode);
+        //print_r($id_kuesioner);
+        //print_r($respondent_id);
         print_r($arr_jawaban);
     }
 }
