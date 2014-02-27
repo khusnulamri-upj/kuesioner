@@ -9,5 +9,5 @@
         <link rel="shortcut icon" href="<?php echo base_url('assets/ico'); ?>/1393245769_93207.ico">
         <title>Kuesioner</title>
     </head>
-    <body>
+    <body><?php print_r($_SESSION); ?>
         

@@ -8,7 +8,6 @@ class Kuesioner extends CI_Controller {
     function __construct() {
         parent::__construct();
         $this->load->helper('session_helper');
-        
     }
     
     public function index() {
@@ -18,12 +17,16 @@ class Kuesioner extends CI_Controller {
     public function lists() {
         $this->load->model('mKuesioner');
         $list_kuesioner = $this->mKuesioner->list_active_kuesioner();
+        if (empty($list_kuesioner)) {
+            //exit();
+            redirect($this->config->item('kuesioner_app_base'));
+        }
         $index = 0;
         $html_kuesioner = '<table>';
         foreach($list_kuesioner as $obj) {
             if (!empty($obj->deskripsi)) {
                 $html_kuesioner .= '<tr>';
-                $html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner))).'">'.$obj->deskripsi.'</a></td>';
+                $html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
                 $html_kuesioner .= '</tr>';
             }
         }
@@ -38,10 +41,8 @@ class Kuesioner extends CI_Controller {
         $id_periode = $arr_dec[0];
         $id_kuesioner = $arr_dec[1];
         $this->load->model('mKuesioner');
-        if ((empty($enc_from_lists)) || (empty($id_periode)) || (!$this->mKuesioner->is_id_kuesioner_exist($id_kuesioner))) {
-            redirect(site_url('kuesioner/lists'));
-        }
-        $kuesioner_data = $this->mKuesioner->get_kuesioner_data($id_kuesioner);
+        $kuesioner_data = $this->mKuesioner->get_kuesioner_data($id_kuesioner,$id_periode);
+        //print_r($kuesioner_data);
         $str_respondent_id = $kuesioner_data->respondent_id;
         $is_function = strpos($str_respondent_id, '()');
         if ($is_function === FALSE) {
@@ -50,17 +51,31 @@ class Kuesioner extends CI_Controller {
             $str_respondent_id = str_replace('()', '', $str_respondent_id);
             $respondent_id = $str_respondent_id();
         }
+        if ((empty($enc_from_lists)) || (empty($id_periode)) || (!$this->mKuesioner->is_id_kuesioner_exist($id_kuesioner)) || (empty($respondent_id))) {
+            redirect(site_url('kuesioner/lists'));
+        }
+        
+        $html_hidden = '';
+        if (array_key_exists(2, $arr_dec)) {
+            if (!empty($arr_dec[2])) {
+                $custom_data = $arr_dec[2];
+                //VARIABLE CUSTOM FOR SAVING TO DATABASE
+                $enc_custom_data = $this->encrypt->encode($custom_data);
+                $enc_str_custom_data = $this->encrypt->encode('custom_data');
+                $html_hidden .= '<input type="hidden" name="'.$enc_str_custom_data.'" value="'.$enc_custom_data.'">';
+                //$html_hidden .= '<input type="hidden" name="custom_data" value="'.$custom_data.'">';
+            }
+        }
         //VARIABLE REQUIRED FOR SAVING TO DATABASE
         $enc_id_periode = $this->encrypt->encode($id_periode);
         $enc_str_id_periode = $this->encrypt->encode('id_periode');
-        $html_hidden = '<input type="hidden" name="'.$enc_str_id_periode.'" value="'.$enc_id_periode.'">';
+        $html_hidden .= '<input type="hidden" name="'.$enc_str_id_periode.'" value="'.$enc_id_periode.'">';
         $enc_id_kuesioner = $this->encrypt->encode($id_kuesioner);
         $enc_str_id_kuesioner = $this->encrypt->encode('id_kuesioner');
         $html_hidden .= '<input type="hidden" name="'.$enc_str_id_kuesioner.'" value="'.$enc_id_kuesioner.'">';
         $enc_respondent_id = $this->encrypt->encode($respondent_id);
         $enc_str_respondent_id = $this->encrypt->encode('respondent_id');
         $html_hidden .= '<input type="hidden" name="'.$enc_str_respondent_id.'" value="'.$enc_respondent_id.'">';
-        //VARIABLE CUSTOM FOR SAVING TO DATABASE
         
         $data['html_form'] = '<form method="POST" action="'.site_url('kuesioner/finish').'">'.$html_hidden;
         $list_pertanyaan = $this->mKuesioner->get_form($id_kuesioner);
@@ -108,12 +123,14 @@ class Kuesioner extends CI_Controller {
         $id_periode = NULL;
         $id_kuesioner = NULL;
         $respondent_id = NULL;
+        //print_r($this->input->post());
         foreach ($this->input->post() as $key => $value) {
             $index = $this->encrypt->decode($key);
             $is_id_periode = strpos($index, 'id_periode');
             $is_id_kuesioner = strpos($index, 'id_kuesioner');
             $is_respondent_id = strpos($index, 'respondent_id');
             $is_pertanyaan = strpos($index, 'tanya');
+            $is_custom_data = strpos($index, 'custom_data');
             if ($is_id_periode !== FALSE) {
                 $id_periode = $this->encrypt->decode($value);
             }
@@ -135,13 +152,21 @@ class Kuesioner extends CI_Controller {
                 }
                 $arr_jawaban[$no[1]]->tipe = $no[2];
             }
+            if ($is_custom_data !== FALSE) {
+                $custom_data = $this->encrypt->decode($value);
+            }
+            //print_r($custom_data);
+            //print_r($index);
         }
+        //print_r($custom_data);
         $this->load->model('mKuesioner');
-        $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban);
+        $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data);
         //print_r($id_periode);
         //print_r($id_kuesioner);
         //print_r($respondent_id);
-        print_r($arr_jawaban);
+        //print_r($arr_jawaban);
+        
+        redirect(site_url('/kuesioner'));
     }
 }
 
