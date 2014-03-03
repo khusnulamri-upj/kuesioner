@@ -17,16 +17,18 @@ class Kuesioner extends CI_Controller {
     public function lists() {
         $this->load->model('mKuesioner');
         $list_kuesioner = $this->mKuesioner->list_active_kuesioner();
+        //print_r($list_kuesioner);
         if (empty($list_kuesioner)) {
-            //exit();
-            redirect($this->config->item('kuesioner_app_base'));
+            exit();
+            //redirect($this->config->item('kuesioner_app_base'));
         }
         $index = 0;
         $html_kuesioner = '<table>';
         foreach($list_kuesioner as $obj) {
             if (!empty($obj->deskripsi)) {
                 $html_kuesioner .= '<tr>';
-                $html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
+                //$html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
+                $html_kuesioner .= '<td><a class="width-set1 button" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
                 $html_kuesioner .= '</tr>';
             }
         }
@@ -80,10 +82,10 @@ class Kuesioner extends CI_Controller {
         $data['html_form'] = '<form method="POST" action="'.site_url('kuesioner/finish').'">'.$html_hidden;
         $list_pertanyaan = $this->mKuesioner->get_form($id_kuesioner);
         $index = 0;
-        $html_pertanyaan = '<table border="1">';
+        $html_pertanyaan = '<table>';
         foreach($list_pertanyaan as $obj) {
             if (!empty($obj->tipe)) {
-                $html_pertanyaan .= '<tr>';
+                $html_pertanyaan .= '<tr class="bordered">';
                 if ($obj->tipe == 'kategori') {
                     $html_pertanyaan .= '<td align="right">&nbsp;</td><td><b>'.$obj->isi.'</b></td>';
                 } else {
@@ -114,7 +116,7 @@ class Kuesioner extends CI_Controller {
             }
         }
         $html_pertanyaan .= '</table>';
-        $data['html_form'] .= $html_pertanyaan.'<input type="submit" value="Simpan"></form>';
+        $data['html_form'] .= $html_pertanyaan.'<div style="text-align: center;"><input type="submit" value="Simpan"></div></form>';
         $this->load->view('kuesioner/form_kuesioner',$data);
     }
     

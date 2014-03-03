@@ -37,6 +37,8 @@ class MKuesioner extends CI_Model {
         $db_dflt->close();
         if ($query->num_rows() > 0) {
             //return $query->result();
+            //print_r($query->result());
+            //exit();
             foreach ($query->result() as $row) {
                 //CREATE ALL LIST KUESIONER AVAIBLE FOR THIS RESPONDENT_ID
                 if ((strpos($row->respondent_id,'()') === FALSE) || (strpos($row->generator_config,'db=') === FALSE) || (strpos($row->generator_config,'sql=') === FALSE)) {
