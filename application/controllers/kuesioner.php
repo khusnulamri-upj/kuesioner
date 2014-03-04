@@ -14,7 +14,7 @@ class Kuesioner extends CI_Controller {
         $this->lists();
     }
     
-    public function lists() {
+    /*public function lists() {
         $this->load->model('mKuesioner');
         $list_kuesioner = $this->mKuesioner->list_active_kuesioner();
         //print_r($list_kuesioner);
@@ -29,6 +29,33 @@ class Kuesioner extends CI_Controller {
                 $html_kuesioner .= '<tr>';
                 //$html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
                 $html_kuesioner .= '<td><a class="width-set1 button" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
+                $html_kuesioner .= '</tr>';
+            }
+        }
+        $html_kuesioner .= '</table>';
+        $data['html_form'] = $html_kuesioner;
+        $this->load->view('kuesioner/list_kuesioner',$data);
+    }*/
+    
+    public function lists() {
+        $this->load->model('mKuesioner');
+        $list_kuesioner = $this->mKuesioner->list_active_kuesioner();
+        //print_r($list_kuesioner);
+        if (empty($list_kuesioner)) {
+            exit();
+            //redirect($this->config->item('kuesioner_app_base'));
+        }
+        $index = 1;
+        $html_kuesioner = '<table class="padding-line">';
+        foreach($list_kuesioner as $obj) {
+            if (!empty($obj->deskripsi)) {
+                $html_kuesioner .= '<tr>';
+                //$html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
+                $enable_kuesioner = 'class="disabled-button" href="#"';
+                if ($obj->is_filled == FALSE) {
+                     $enable_kuesioner = 'class="button" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'"';
+                }
+                $html_kuesioner .= '<td>'.$index.' '.$obj->deskripsi.'</td><td><a '.$enable_kuesioner.'>Isi Kuesioner</a></td>';
                 $html_kuesioner .= '</tr>';
             }
         }
