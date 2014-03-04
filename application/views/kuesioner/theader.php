@@ -71,11 +71,14 @@
             filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#f88e11',endColorstr='#f06015');
         }
         .bordered td {
-            border:1px solid black;
+            border:1px solid gray;
             padding:.2em .2em .2em .2em;
         }
-        .bordered-up {
-            border-bottom-color: white;
+        .no-bottom-border {
+            border-bottom-color: white !important;
+        }
+        .no-right-border {
+            border-right-color: white !important;
         }
         </style>
     </head>

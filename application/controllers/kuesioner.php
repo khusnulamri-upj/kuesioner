@@ -82,12 +82,12 @@ class Kuesioner extends CI_Controller {
         $data['html_form'] = '<form method="POST" action="'.site_url('kuesioner/finish').'">'.$html_hidden;
         $list_pertanyaan = $this->mKuesioner->get_form($id_kuesioner);
         $index = 0;
-        $html_pertanyaan = '<table>';
+        $html_pertanyaan = '<table class="bordered">';
         foreach($list_pertanyaan as $obj) {
             if (!empty($obj->tipe)) {
-                $html_pertanyaan .= '<tr class="bordered">';
+                $html_pertanyaan .= '<tr>';
                 if ($obj->tipe == 'kategori') {
-                    $html_pertanyaan .= '<td align="right">&nbsp;</td><td><b>'.$obj->isi.'</b></td>';
+                    $html_pertanyaan .= '<td align="right">&nbsp;</td><td class="no-right-border"><b>'.$obj->isi.'</b></td>';
                 } else {
                     $html_pertanyaan .= '<td align="right">'.++$index.'</td><td>'.$obj->isi.'</td>';
                 }
