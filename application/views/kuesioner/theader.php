@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -45,6 +45,11 @@
                 border-collapse:collapse;
             }
         }
+        .boxed {
+            display: inline-block;
+            text-align: center;
+        }
+            
         .padding-line td {
             padding:.25em 2em .3em;
         }

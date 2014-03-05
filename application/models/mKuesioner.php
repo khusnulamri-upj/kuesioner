@@ -148,12 +148,22 @@ class MKuesioner extends CI_Model {
                                 $deskripsi_return = str_replace($value, $row_tmp->$field_save, $deskripsi_return);
                             }
                         }
+                        //membuat string data yang akan digunakan dalam coding
+                        $str_to_throw = $row->data_helper;
+                        $arr_field_throw = explode(';', $str_to_throw);
+                        foreach($arr_field_throw as $value) {
+                            if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
+                                $field_throw = str_replace('}', '', str_replace('{', '', $value));
+                                $str_to_throw = str_replace($value, $field_throw.'='.$row_tmp->$field_throw, $str_to_throw);
+                            }
+                        }
                         $arr_obj_return[] = (object) array(
                             'id_periode' => $row->id_periode,
                             'id_kuesioner' => $row->id_kuesioner,
                             'deskripsi' => $deskripsi_return,
                             'custom_data' => $str_to_save,
-                            'respondent_id' => $str_func()
+                            'respondent_id' => $str_func(),
+                            'throwed_data' => $str_to_throw
                         );
                     }
                 }

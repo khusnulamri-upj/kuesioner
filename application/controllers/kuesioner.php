@@ -11,7 +11,7 @@ class Kuesioner extends CI_Controller {
     }
     
     public function index() {
-        $this->lists();
+        $this->edom_lists();
     }
     
     /*public function lists() {
@@ -37,7 +37,7 @@ class Kuesioner extends CI_Controller {
         $this->load->view('kuesioner/list_kuesioner',$data);
     }*/
     
-    public function lists() {
+    public function edom_lists() {
         $this->load->model('mKuesioner');
         $list_kuesioner = $this->mKuesioner->list_active_kuesioner();
         //print_r($list_kuesioner);
@@ -47,15 +47,57 @@ class Kuesioner extends CI_Controller {
         }
         $index = 1;
         $html_kuesioner = '<table class="padding-line">';
+        $val_row_before = '';
+        $val_row_before2 = '';
         foreach($list_kuesioner as $obj) {
             if (!empty($obj->deskripsi)) {
                 $html_kuesioner .= '<tr>';
                 //$html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
-                $enable_kuesioner = 'class="disabled-button" href="#"';
+                $enable_kuesioner = 'class="disabled-button boxed" href="#"';
+                $btn_enabled = FALSE;
                 if ($obj->is_filled == FALSE) {
-                     $enable_kuesioner = 'class="button" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'"';
+                     $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'"';
+                     $btn_enabled = TRUE;
                 }
-                $html_kuesioner .= '<td>'.$index.' '.$obj->deskripsi.'</td><td><a '.$enable_kuesioner.'>Isi Kuesioner</a></td>';
+                $deskripsi = $obj->deskripsi;
+                $no = $index++;
+                $btn_text = 'Isi Kuesioner';
+                //AMRNOTE: untuk men-disable kuesioner ke-2 dengan dosen dan mk yang sama
+                $session2_begin = FALSE;
+                if (!empty($obj->throwed_data)) {
+                    $str_throwed_data = $obj->throwed_data;
+                    $arr_throwed_data = explode(';', $str_throwed_data);
+                    foreach($arr_throwed_data as $val) {
+                        $arr_throwed_data2 = explode('=', $val);
+                        $$arr_throwed_data2[0] = $arr_throwed_data2[1];
+                    }
+                    if (($is_same == 1) && ($val_row_before == $obj->is_filled)) {
+                        $enable_kuesioner = 'class="disabled-button boxed" href="#"';
+                        $btn_enabled = FALSE;
+                    }
+                    if ($val_row_before2 == $obj->deskripsi) {
+                        $deskripsi = '</td><td>';
+                    }
+                    $arr_tmp_before = explode('</td><td>',$val_row_before2);
+                    $mata_kuliah_before = $arr_tmp_before[0];
+                    if (empty($mata_kuliah_before)) {
+                        $mata_kuliah_before = FALSE;
+                    }
+                    $arr_tmp = explode('</td><td>',$obj->deskripsi);
+                    $mata_kuliah = $arr_tmp[0];
+                    if ($mata_kuliah_before == $mata_kuliah) {
+                        $no = '';
+                        $index--;
+                        $deskripsi = str_replace($mata_kuliah, '', $deskripsi);
+                        if (($btn_enabled == TRUE) && ($session2_begin == FALSE) && ($is_same == 1)) {
+                            $enable_kuesioner = 'class="disabled-button boxed" href="#"';
+                        }
+                    }
+                    //nilai dosen di row sebelumnya
+                    $val_row_before = $obj->is_filled;
+                    $val_row_before2 = $obj->deskripsi;
+                }
+                $html_kuesioner .= '<td>'.$no.'</td><td>'.$deskripsi.'</td><td><a '.$enable_kuesioner.'>'.$btn_text.'</a></td>';
                 $html_kuesioner .= '</tr>';
             }
         }
