@@ -20,6 +20,9 @@
                 width: 82%;
                 border-collapse:collapse;
             }
+            .width-set3 {
+                width: 95%;
+            }
         }
         @media only screen
         and (min-width : 480px)
@@ -33,6 +36,9 @@
                 width: 91%;
                 border-collapse:collapse;
             }
+            .width-set3 {
+                width: 97%;
+            }
         }
         @media only screen
         and (min-width : 769px) {
@@ -44,14 +50,21 @@
                 margin: 0 auto;
                 border-collapse:collapse;
             }
+            .width-set3 {
+                width: 99%;
+            }
+        }
+        .width-set2 {
+            min-width: 19px;
+            text-align: right;
         }
         .boxed {
             display: inline-block;
             text-align: center;
         }
-            
-        .padding-line td {
-            padding:.25em 2em .3em;
+        .centered {
+            padding:.3em .3em .3em .3em;
+            text-align: center;
         }
         .button {
             outline:none;
@@ -96,15 +109,21 @@
             background:-moz-linear-gradient(top,#D8D8D8,#808080);
             filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#D8D8D8',endColorstr='#808080');
         }
-        .bordered td {
+        .bordered tr td {
             border:1px solid gray;
-            padding:.2em .2em .2em .2em;
+            padding:.2em .4em .2em .3em;
         }
-        .no-bottom-border {
-            border-bottom-color: white !important;
+        .yes-top-border td {
+            border-top:3px solid gray !important;
+        }
+        .yes-bottom-border td {
+            border-bottom:3px solid gray !important;
         }
         .no-right-border {
             border-right-color: white !important;
+        }
+        .no-bottom-border {
+            border-bottom-color: white !important;
         }
         </style>
     </head>
