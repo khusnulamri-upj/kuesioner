@@ -372,6 +372,23 @@ class MKuesioner extends CI_Model {
         return FALSE;
     }
     
+    function get_array_jawaban_checker($id_kuesioner) {
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT mp.id_pertanyaan, mp.tipe
+            FROM master_pertanyaan mp
+            WHERE mp.id_kuesioner = ".$id_kuesioner."
+            AND mp.is_mandatory = 1";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        $arr_checker = array();
+        if ($query->num_rows() > 0) {
+            foreach ($query->result() as $obj) {
+                $arr_checker[$obj->id_pertanyaan] = $obj->tipe;
+            }
+        }
+        return $arr_checker;
+    }
+    
     function insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban, $custom_data) {
         $db_dflt = $this->load->database('default', TRUE);
         $this->db->trans_start();
@@ -412,6 +429,20 @@ class MKuesioner extends CI_Model {
         //exit();
         $this->db->trans_complete();
         $db_dflt->close();
+    }
+    
+    function get_all_value_pilihan($id_pilihan) {
+        if (!empty($id_pilihan)) {
+            $db_dflt = $this->load->database('default', TRUE);
+            $sql = "SELECT * FROM pilihan
+                WHERE id_grup_pilihan = ".$id_pilihan." ORDER BY order_no";
+            $query = $db_dflt->query($sql);
+            $db_dflt->close();
+            if ($query->num_rows() > 0) {
+                return $query->result();
+            }
+        }
+        return FALSE;
     }
 }
 

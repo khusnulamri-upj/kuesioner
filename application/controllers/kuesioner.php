@@ -10,8 +10,8 @@ class Kuesioner extends CI_Controller {
         $this->load->helper('session_helper');
     }
     
-    public function index() {
-        $this->edom_lists();
+    public function index($just_for_check = NULL) {
+        $this->edom_lists($just_for_check);
     }
     
     /*public function lists() {
@@ -37,9 +37,11 @@ class Kuesioner extends CI_Controller {
         $this->load->view('kuesioner/list_kuesioner',$data);
     }*/
     
-    public function edom_lists() {
+    public function edom_lists($just_for_check = NULL) {
+        $is_exist = 'FALSE';
         $this->load->model('mKuesioner');
-        $list_kuesioner = $this->mKuesioner->edom_list_active_kuesioner();
+        $list_kuesioner = $this->mKuesioner->list_active_kuesioner();
+        //$list_kuesioner = $this->mKuesioner->edom_list_active_kuesioner();
         //print_r($list_kuesioner);
         if (empty($list_kuesioner)) {
             exit();
@@ -60,6 +62,7 @@ class Kuesioner extends CI_Controller {
                 if ($obj->is_filled == FALSE) {
                      $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'"';
                      $btn_enabled = TRUE;
+                     $is_exist = 'TRUE';
                 }
                 $deskripsi = $obj->deskripsi;
                 $no = $index++;
@@ -97,6 +100,7 @@ class Kuesioner extends CI_Controller {
                         $deskripsi = str_replace($mata_kuliah, '', $deskripsi);
                         if (($btn_enabled == TRUE) && ($session2_begin == FALSE) && ($is_same == 1)) {
                             $enable_kuesioner = 'class="disabled-button boxed" href="#"';
+                            $is_exist = 'FALSE';
                         }
                         $style1 = '';
                     }
@@ -115,7 +119,12 @@ class Kuesioner extends CI_Controller {
         }
         $html_kuesioner .= '</table>';
         $data['html_form'] = $html_kuesioner;
-        $this->load->view('kuesioner/list_kuesioner',$data);
+        if ($just_for_check == 'is_exist') {
+            $data['html_form'] = $is_exist;
+            $this->load->view('kuesioner/list_kuesioner',$data);
+        } else {
+            $this->load->view('kuesioner/list_kuesioner',$data);
+        }
     }
     
     public function start($enc_from_lists = NULL) {
@@ -139,6 +148,8 @@ class Kuesioner extends CI_Controller {
         }
         
         $html_hidden = '';
+        $enc_str_previous_url_data = $this->encrypt->encode('previous_url_data');
+        $html_hidden .= '<input type="hidden" name="'.$enc_str_previous_url_data.'" value="'.$enc_from_lists.'">';
         if (array_key_exists(2, $arr_dec)) {
             if (!empty($arr_dec[2])) {
                 $custom_data = $arr_dec[2];
@@ -161,7 +172,8 @@ class Kuesioner extends CI_Controller {
         $html_hidden .= '<input type="hidden" name="'.$enc_str_respondent_id.'" value="'.$enc_respondent_id.'">';
         
         $data['html_form'] = '<form method="POST" action="'.site_url('kuesioner/finish').'">'.$html_hidden;
-        
+        $html_pertanyaan = '<table class="bordered">';
+                
         if ((!empty($kuesioner_data->custom_header)) && (!empty($custom_data))) {
             $str_header = $kuesioner_data->custom_header;
             $arr_for_index = explode(';', $kuesioner_data->custom_data_format);
@@ -172,9 +184,7 @@ class Kuesioner extends CI_Controller {
             }
             //print_r($arr_for_replace_header);
             $data['html_form'] .= $str_header;
-            if (strpos($str_header, '<!--</table>-->') === FALSE) {
-                $html_pertanyaan = '<table class="bordered">';
-            } else {
+            if (strpos($str_header, '<!--</table>-->') !== FALSE) {
                 $html_pertanyaan = '';
             }
         }
@@ -200,16 +210,20 @@ class Kuesioner extends CI_Controller {
                 if ($obj->tipe == 'pilihan') {
                     $enc_id_pertanyaan = $this->encrypt->encode('pilihantanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
                     $html_radio = '';
-                    //AMRNEEDTOIMPROVE : value=$i ??
+                    //AMRNEEDTOIMPROVE : value=$i ?? >>> id_pilihan
+                    $arr_val = $this->mKuesioner->get_all_value_pilihan($obj->id_grup_pilihan);
+                    //print_r($arr_val);
                     for ($i = 1; $i <= $obj->jml_pilihan; $i++) {
-                        $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$i.'"></td>';
+                        $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val[($i-1)]->id_pilihan).'"></td>';
                     }
                     if (!empty($obj->jml_pilihan2)) {
+                        $arr_val2 = $this->mKuesioner->get_all_value_pilihan($obj->id_grup_pilihan2);
+                        //print_r($arr_val2);
                         $enc_id_pertanyaan = $this->encrypt->encode('pilihan2tanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
                         //$html_radio .= '</td><td>&nbsp;</td><td>';
                         $html_radio .= '<td></td>';
                         for ($i = 1; $i <= $obj->jml_pilihan2; $i++) {
-                            $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$i.'"></td>';
+                            $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val2[($i-1)]->id_pilihan).'"></td>';
                         }
                     }
                     //$html_pertanyaan .= '<td>'.$html_radio.'</td>';
@@ -234,11 +248,15 @@ class Kuesioner extends CI_Controller {
         //print_r($this->input->post());
         foreach ($this->input->post() as $key => $value) {
             $index = $this->encrypt->decode($key);
+            $is_previous_url_data = strpos($index, 'previous_url_data');
             $is_id_periode = strpos($index, 'id_periode');
             $is_id_kuesioner = strpos($index, 'id_kuesioner');
             $is_respondent_id = strpos($index, 'respondent_id');
             $is_pertanyaan = strpos($index, 'tanya');
             $is_custom_data = strpos($index, 'custom_data');
+            if ($is_previous_url_data !== FALSE) {
+                $previous_url_data = $value;
+            }
             if ($is_id_periode !== FALSE) {
                 $id_periode = $this->encrypt->decode($value);
             }
@@ -254,7 +272,9 @@ class Kuesioner extends CI_Controller {
                     $arr_jawaban[$no[1]] = new stdClass;
                 }
                 if ($no[0] === 'pilihan2') {
-                    $arr_jawaban[$no[1]]->jawaban2 = $value;
+                    $arr_jawaban[$no[1]]->jawaban2 = $this->encrypt->decode($value);
+                } else if ($no[0] === 'pilihan') {
+                    $arr_jawaban[$no[1]]->jawaban = $this->encrypt->decode($value);
                 } else {
                     $arr_jawaban[$no[1]]->jawaban = $value;
                 }
@@ -266,15 +286,37 @@ class Kuesioner extends CI_Controller {
             //print_r($custom_data);
             //print_r($index);
         }
-        //print_r($custom_data);
-        $this->load->model('mKuesioner');
-        $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data);
-        //print_r($id_periode);
-        //print_r($id_kuesioner);
-        //print_r($respondent_id);
-        //print_r($arr_jawaban);
         
-        redirect(site_url('/kuesioner'));
+        $this->load->model('mKuesioner');
+        $is_pass = $this->mKuesioner->get_array_jawaban_checker($id_kuesioner);
+        foreach ($arr_jawaban as $key => $val) {
+            if ($val->tipe == 'isian') {
+                if (($val->jawaban != '') && (isset($val->jawaban))) {
+                    unset($is_pass[$key]);
+                }
+            } else {
+                unset($is_pass[$key]);
+            }
+        }
+        if (count($is_pass) > 0) {
+            $data['html'] = '<table>';
+            $data['html'] .= '<tr><td>Harap mengisi kuesioner dengan benar.</td></tr>';
+            $data['html'] .= '<tr class="centered"><td><a href="'.site_url('/kuesioner/start/'.$previous_url_data).'">Kembali</a></td></tr>';
+            $data['html'] .= '</table>';
+            $this->load->view('kuesioner/message_kuesioner',$data);
+        } else {
+            $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data);
+            //print_r($id_periode);
+            //print_r($id_kuesioner);
+            //print_r($respondent_id);
+            //print_r($arr_jawaban);
+            //redirect(site_url('/kuesioner'));
+            $data['html'] = '<table>';
+            $data['html'] .= '<tr><td>Terima kasih telah mengisi kuesioner ini.</td></tr>';
+            $data['html'] .= '<tr class="centered"><td><a href="'.site_url('/kuesioner').'">Lanjut</a></td></tr>';
+            $data['html'] .= '</table>';
+            $this->load->view('kuesioner/message_kuesioner',$data);
+        }
     }
 }
 

@@ -23,6 +23,9 @@
             .width-set3 {
                 width: 95%;
             }
+            .width-set4 {
+                width: 100%;
+            }
         }
         @media only screen
         and (min-width : 480px)
@@ -39,6 +42,9 @@
             .width-set3 {
                 width: 97%;
             }
+            .width-set4 {
+                width: 100%;
+            }
         }
         @media only screen
         and (min-width : 769px) {
@@ -52,6 +58,9 @@
             }
             .width-set3 {
                 width: 99%;
+            }
+            .width-set4 {
+                width: 700px;
             }
         }
         .width-set2 {
