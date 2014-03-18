@@ -41,3 +41,14 @@ if (!function_exists('sisfo_get_username')) {
     }
     
 }
+
+if (!function_exists('sisfo_get_level')) {
+
+    function sisfo_get_level() {
+        if ((!empty($_SESSION['_Login'])) && (!empty($_SESSION['_LevelID']))) {
+            return $_SESSION['_LevelID'];
+        }
+        return FALSE;
+    }
+    
+}

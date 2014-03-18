@@ -3,7 +3,7 @@
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
-class Kuesioner extends CI_Controller {
+class Laporan extends CI_Controller {
     
     function __construct() {
         parent::__construct();
@@ -11,126 +11,88 @@ class Kuesioner extends CI_Controller {
     }
     
     public function index() {
-        $this->edom();
+        $this->session->sess_destroy();
     }
     
-    /*public function lists() {
-        $this->load->model('mKuesioner');
-        $list_kuesioner = $this->mKuesioner->list_active_kuesioner();
-        //print_r($list_kuesioner);
-        if (empty($list_kuesioner)) {
-            exit();
-            //redirect($this->config->item('kuesioner_app_base'));
+    //per dosen per mata kuliah
+    public function edom_1() {
+        if ($this->input->post('submit') == 'Lihat') {
+            $newdata = array(
+                'edom_1_tahun' => $this->input->post('edom_1_tahun'),
+                'edom_1_dosen' => $this->input->post('edom_1_dosen'),
+                'edom_1_mk' => $this->input->post('edom_1_mk')
+            );
+            $this->session->set_userdata($newdata);
+            //print_r($this->session->userdata('tahun'));
+            redirect(current_url(), 'location');
         }
-        $index = 0;
-        $html_kuesioner = '<table>';
-        foreach($list_kuesioner as $obj) {
-            if (!empty($obj->deskripsi)) {
-                $html_kuesioner .= '<tr>';
-                //$html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
-                $html_kuesioner .= '<td><a class="width-set1 button" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
-                $html_kuesioner .= '</tr>';
-            }
-        }
-        $html_kuesioner .= '</table>';
-        $data['html_form'] = $html_kuesioner;
-        $this->load->view('kuesioner/list_kuesioner',$data);
-    }*/
-    public function is_exist() {
-        $this->edom('is_exist');
-    }
-    
-    public function edom($just_for_check = NULL) {
-        $is_exist = 'FALSE';
-        $this->load->model('mKuesioner');
-        //$list_kuesioner = $this->mKuesioner->list_active_kuesioner();
-        $list_kuesioner = $this->mKuesioner->edom_list_active_kuesioner();
-        //print_r($list_kuesioner);
-        if (empty($list_kuesioner)) {
-            if ($just_for_check == 'is_exist') {
-                echo $is_exist;
-            }
-            exit();
-            //redirect($this->config->item('kuesioner_app_base'));
-        }
-        $index = 1;
-        $html_kuesioner = '<table class="bordered">';
-        $val_row_before = '';
-        $val_row_before2 = '';
-        $count_list_kuesioner = count($list_kuesioner);
-        $i = 0;
-        foreach($list_kuesioner as $obj) {
-            $i++;
-            if (!empty($obj->deskripsi)) {
-                //$html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
-                $enable_kuesioner = 'class="disabled-button boxed" href="#"';
-                $btn_enabled = FALSE;
-                if ($obj->is_filled == FALSE) {
-                     $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'"';
-                     $btn_enabled = TRUE;
-                     $is_exist = 'TRUE';
+        print_r($this->session->all_userdata());
+        $this->load->model('mLaporan');
+        $list_tahun = $this->mLaporan->edom_get_tahun();
+        $data['html'] = '<form method="POST" action="'.site_url('laporan/edom_1').'">';
+        $data['html'] .= '<table><tr>';
+        $data['html'] .= '<td>Tahun : </td><td><select name="edom_1_tahun[]" multiple="multiple">';
+        foreach ($list_tahun as $obj) {
+            $selected = '';
+            $sess_tahun = $this->session->userdata('edom_1_tahun');
+            if (is_array($sess_tahun)) {
+                if (in_array($obj->tahun, $sess_tahun) ) {
+                    $selected = ' selected="selected"';
                 }
-                $deskripsi = $obj->deskripsi;
-                $no = $index++;
-                $btn_text = 'Isi Kuesioner';
-                $style1 = '';
-                //AMRNOTE: untuk men-disable kuesioner ke-2 dengan dosen dan mk yang sama
-                $session2_begin = TRUE;
-                if (!empty($obj->throwed_data)) {
-                //print_r(strlen($obj->throwed_data).'-');
-                //if (strlen($obj->throwed_data) > 0) {
-                    $str_throwed_data = $obj->throwed_data;
-                    $arr_throwed_data = explode(';', $str_throwed_data);
-                    foreach($arr_throwed_data as $val) {
-                        $arr_throwed_data2 = explode('=', $val);
-                        $$arr_throwed_data2[0] = $arr_throwed_data2[1];
-                    }
-                    if (($is_same == 1) && ($val_row_before == $obj->is_filled)) {
-                        $enable_kuesioner = 'class="disabled-button boxed" href="#"';
-                        $btn_enabled = FALSE;
-                    }
-                    if ($val_row_before2 == $obj->deskripsi) {
-                        $deskripsi = '</td><td>';
-                    }
-                    $arr_tmp_before = explode('</td><td>',$val_row_before2);
-                    $mata_kuliah_before = $arr_tmp_before[0];
-                    if (empty($mata_kuliah_before)) {
-                        $mata_kuliah_before = FALSE;
-                    }
-                    $arr_tmp = explode('</td><td>',$obj->deskripsi);
-                    $mata_kuliah = $arr_tmp[0];
-                    $style1 = ' class="yes-top-border"';
-                    if ($mata_kuliah_before == $mata_kuliah) {
-                        $no = '';
-                        $index--;
-                        $deskripsi = str_replace($mata_kuliah, '', $deskripsi);
-                        if (($btn_enabled == TRUE) && ($session2_begin == FALSE) && ($is_same == 1)) {
-                            $enable_kuesioner = 'class="disabled-button boxed" href="#"';
-                            $is_exist = 'FALSE';
-                        }
-                        $style1 = '';
-                    }
-                    if ($i == $count_list_kuesioner) {
-                        $style1 = ' class="yes-bottom-border"';
-                    }
-                    //nilai dosen di row sebelumnya
-                    $val_row_before = $obj->is_filled;
-                    $val_row_before2 = $obj->deskripsi;
-                }
-                $html_kuesioner .= '<tr'.$style1.'>';
-                //$html_kuesioner .= '<td>'.$no.'</td><td>'.$deskripsi.'</td><td><a '.$enable_kuesioner.'>'.$btn_text.'</a></td>';
-                $html_kuesioner .= '<td class="width-set2">'.$no.'</td><td>'.$deskripsi.'</td><td><a '.$enable_kuesioner.'>'.$btn_text.'</a></td>';
-                $html_kuesioner .= '</tr>';
             }
+            $data['html'] .= '<option value="'.$obj->tahun.'"'.$selected.'>'.$obj->deskripsi.'</option>';
         }
-        $html_kuesioner .= '</table>';
-        $data['html_form'] = $html_kuesioner;
-        if ($just_for_check == 'is_exist') {
-            $data['html_form'] = $is_exist;
-            $this->load->view('kuesioner/list_kuesioner',$data);
+        $data['html'] .= '</select></td>';
+        
+        $select_dosen = '<td>Dosen : </td><td><select name="edom_1_dosen">';
+        $list_dosen = $this->mLaporan->edom_get_dosen_by_tahun($this->session->userdata('edom_1_tahun'));
+        if ($list_dosen != FALSE) {
+            foreach ($list_dosen as $obj) {
+                $selected = '';
+                $sess_dosen = $this->session->userdata('edom_1_dosen');
+                if (isset($sess_dosen)) {
+                    if ($obj->DosenID === $sess_dosen) {
+                        $selected = ' selected="selected"';
+                    }
+                }
+                $select_dosen .= '<option value="'.$obj->DosenID.'"'.$selected.'>'.$obj->Nama_Dosen.'</option>';
+            }
         } else {
-            $this->load->view('kuesioner/list_kuesioner',$data);
+            $select_dosen = '<td>Dosen : </td><td><select name="edom_1_dosen" disabled="disabled">';
+            $select_dosen .= '<option selected="selected">Tidak Ada Data Dosen</option>';
         }
+        $select_dosen .= '</select></td>';
+        $data['html'] .= $select_dosen;
+        
+        $select_mk = '<td>Mata Kuliah : </td><td><select name="edom_1_mk">';
+        $list_mk = $this->mLaporan->edom_get_mk_by_tahun_and_dosen($this->session->userdata('edom_1_tahun'), $this->session->userdata('edom_1_dosen'));
+        if ($list_mk != FALSE) {
+            foreach ($list_mk as $obj) {
+                $selected = '';
+                $sess_mk = $this->session->userdata('edom_1_mk');
+                if (isset($sess_mk)) {
+                    if ($obj->MKKode === $sess_mk) {
+                        $selected = ' selected="selected"';
+                    }
+                }
+                $select_mk .= '<option value="'.$obj->MKKode.'"'.$selected.'>'.$obj->Nama_MK.'</option>';
+            }
+        } else {
+            $select_mk = '<td>Mata Kuliah : </td><td><select name="edom_1_mk" disabled="disabled">';
+            $select_mk .= '<option selected="selected">Tidak Ada Data Mata Kuliah</option>';
+        }
+        $select_mk .= '</select></td>';
+        $data['html'] .= $select_mk;
+        
+        $data['html'] .= '</tr></table>';
+        $data['html'] .= '<input name="submit" type="submit" value="Lihat">';
+        $data['html'] .= '</form>';
+        echo $data['html'];
+    }
+    
+    public function edom_1f() {
+        print_r($this->input->post('submit'));
+        
     }
     
     public function start($enc_from_lists = NULL) {
@@ -323,11 +285,6 @@ class Kuesioner extends CI_Controller {
             $data['html'] .= '</table>';
             $this->load->view('kuesioner/message_kuesioner',$data);
         }
-    }
-    
-    public function sync_jawaban_to_jawaban_header() {
-        $this->load->model('mKuesioner');
-        echo '#Affected Rows : '.$this->mKuesioner->sync_jawaban_to_jawaban_header();
     }
 }
 

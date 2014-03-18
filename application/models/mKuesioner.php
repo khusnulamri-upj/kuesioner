@@ -124,7 +124,7 @@ class MKuesioner extends CI_Model {
             foreach ($query->result() as $row) {
                 //CREATE ALL LIST KUESIONER AVAIBLE FOR THIS RESPONDENT_ID
                 if ((strpos($row->respondent_id,'()') === FALSE) || (strpos($row->generator_config,'db=') === FALSE) || (strpos($row->generator_config,'sql=') === FALSE)) {
-                    exit('Please check your config. #periode');
+                    exit('#Check your periode config.');
                 }
                 if (!empty($row->generator_config)) {
                     //menjalankan query dari config untuk me-generate form kuesioner
@@ -218,7 +218,7 @@ class MKuesioner extends CI_Model {
             foreach ($query->result() as $row) {
                 //CREATE ALL LIST KUESIONER AVAIBLE FOR THIS RESPONDENT_ID
                 if ((strpos($row->respondent_id,'()') === FALSE) || (strpos($row->generator_config,'db=') === FALSE) || (strpos($row->generator_config,'sql=') === FALSE)) {
-                    exit('Please check your config. #periode');
+                    exit('#Check your periode config.');
                 }
                 if (!empty($row->generator_config)) {
                     //menjalankan query dari config untuk me-generate form kuesioner
@@ -263,9 +263,15 @@ class MKuesioner extends CI_Model {
                 }
                 //DELETE KUESIONER THAT HAS BEEN FILLED
                 $db_delete = $this->load->database('default', TRUE);
-                $sql_delete = "SELECT j.id_periode, j.id_kuesioner, j.respondent_id, j.custom_data
+                /*$sql_delete = "SELECT j.id_periode, j.id_kuesioner, j.respondent_id, j.custom_data
                     FROM jawaban j
-                    GROUP BY j.id_periode, j.id_kuesioner, j.respondent_id, j.custom_data";
+                    GROUP BY j.id_periode, j.id_kuesioner, j.respondent_id, j.custom_data";*/
+                
+                //USING JAWABAN_HEADER
+                $sql_delete = "SELECT jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data
+                    FROM jawaban_header jh
+                    GROUP BY jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data";
+                
                 $qry_delete = $db_delete->query($sql_delete);
                 $db_delete->close();
                 $return = array();
@@ -372,6 +378,20 @@ class MKuesioner extends CI_Model {
         return FALSE;
     }
     
+    function get_all_value_pilihan($id_pilihan) {
+        if (!empty($id_pilihan)) {
+            $db_dflt = $this->load->database('default', TRUE);
+            $sql = "SELECT * FROM pilihan
+                WHERE id_grup_pilihan = ".$id_pilihan." ORDER BY order_no";
+            $query = $db_dflt->query($sql);
+            $db_dflt->close();
+            if ($query->num_rows() > 0) {
+                return $query->result();
+            }
+        }
+        return FALSE;
+    }
+    
     function get_array_jawaban_checker($id_kuesioner) {
         $db_dflt = $this->load->database('default', TRUE);
         $sql = "SELECT mp.id_pertanyaan, mp.tipe
@@ -391,7 +411,17 @@ class MKuesioner extends CI_Model {
     
     function insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban, $custom_data) {
         $db_dflt = $this->load->database('default', TRUE);
-        $this->db->trans_start();
+        $db_dflt->trans_start();
+        
+        //USING JAWABAN_HEADER
+        $data_header = array(
+            'id_periode' => $id_periode,
+            'id_kuesioner' => $id_kuesioner,
+            'respondent_id' => $respondent_id);
+        if ($custom_data != NULL) {
+                $data_header['custom_data'] = $custom_data;
+            }
+        $db_dflt->insert('jawaban_header', $data_header);
         
         foreach ($arr_jawaban as $key => $value) {
             $data_mysql = array(
@@ -424,25 +454,40 @@ class MKuesioner extends CI_Model {
                 $col_jawaban => $jawaban,
             );*/
             //print_r($data_mysql);
-            $this->db->insert('jawaban', $data_mysql);
+            $db_dflt->insert('jawaban', $data_mysql);
         }
         //exit();
-        $this->db->trans_complete();
+        $db_dflt->trans_complete();
         $db_dflt->close();
     }
     
-    function get_all_value_pilihan($id_pilihan) {
-        if (!empty($id_pilihan)) {
-            $db_dflt = $this->load->database('default', TRUE);
-            $sql = "SELECT * FROM pilihan
-                WHERE id_grup_pilihan = ".$id_pilihan." ORDER BY order_no";
-            $query = $db_dflt->query($sql);
-            $db_dflt->close();
-            if ($query->num_rows() > 0) {
-                return $query->result();
-            }
-        }
-        return FALSE;
+    //USING JAWABAN_HEADER
+    function sync_jawaban_to_jawaban_header() {
+        $db_dflt = $this->load->database('default', TRUE);
+        $db_dflt->trans_start();
+        
+        $sql = "INSERT INTO jawaban_header 
+            SELECT NULL, NULL, bb.id_periode, bb.id_kuesioner, bb.respondent_id, bb.custom_data FROM (
+            SELECT aa.id_periode, aa.id_kuesioner, aa.respondent_id, aa.custom_data, SUM(flag) AS jumlah FROM (
+            SELECT jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data, 1 AS flag
+            FROM jawaban_header jh
+            UNION
+            SELECT j.id_periode, j.id_kuesioner, j.respondent_id, j.custom_data, 2 AS flag
+            FROM jawaban j
+            ) aa
+            GROUP BY aa.id_periode, aa.id_kuesioner, aa.respondent_id, aa.custom_data
+            ) bb
+            WHERE bb.jumlah = 2";
+        
+        $query = $db_dflt->query($sql);
+        
+        $affected_rows = $db_dflt->affected_rows();
+        //exit($affected_rows.'-test');
+                
+        $db_dflt->trans_complete();
+        $db_dflt->close();
+        
+        return $affected_rows;
     }
 }
 
