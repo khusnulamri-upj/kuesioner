@@ -6,7 +6,7 @@ class MKuesioner extends CI_Model {
         // Call the Model constructor
         parent::__construct();
     }
-
+    
     /*function list_active_kuesioner() {
         $db_dflt = $this->load->database('default', TRUE);
         $sql = "SELECT p.id_periode, p.deskripsi, mk.id_kuesioner
@@ -114,7 +114,7 @@ class MKuesioner extends CI_Model {
         $sql = "SELECT *
             FROM periode p
             LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
-            WHERE p.waktu_min < NOW() AND p.waktu_maks > NOW()";
+            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW()";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {
@@ -139,7 +139,7 @@ class MKuesioner extends CI_Model {
                     foreach ($qry_tmp->result() as $row_tmp) {
                         //membuat string data yang akan disimpan dalam database
                         $str_to_save = $row->custom_data_format;
-                        $arr_field_save = explode(';', $str_to_save);
+                        $arr_field_save = explode($row->separator, $str_to_save);
                         $deskripsi_return = $row->deskripsi;
                         foreach($arr_field_save as $value) {
                             if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
@@ -150,7 +150,7 @@ class MKuesioner extends CI_Model {
                         }
                         //membuat string data yang akan digunakan dalam coding
                         $str_to_throw = $row->data_helper;
-                        $arr_field_throw = explode(';', $str_to_throw);
+                        $arr_field_throw = explode($row->separator, $str_to_throw);
                         foreach($arr_field_throw as $value) {
                             if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
                                 $field_throw = str_replace('}', '', str_replace('{', '', $value));
@@ -163,7 +163,8 @@ class MKuesioner extends CI_Model {
                             'deskripsi' => $deskripsi_return,
                             'custom_data' => $str_to_save,
                             'respondent_id' => $str_func(),
-                            'throwed_data' => $str_to_throw
+                            'throwed_data' => $str_to_throw,
+                            'separator' => $row->separator
                         );
                     }
                 }
@@ -208,7 +209,7 @@ class MKuesioner extends CI_Model {
         $sql = "SELECT *
             FROM periode p
             LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
-            WHERE p.waktu_min < NOW() AND p.waktu_maks > NOW() AND mk.shortname = 'EDOM'";
+            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW() AND mk.shortname = 'EDOM'";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {
@@ -233,7 +234,7 @@ class MKuesioner extends CI_Model {
                     foreach ($qry_tmp->result() as $row_tmp) {
                         //membuat string data yang akan disimpan dalam database
                         $str_to_save = $row->custom_data_format;
-                        $arr_field_save = explode(';', $str_to_save);
+                        $arr_field_save = explode($row->separator, $str_to_save);
                         $deskripsi_return = $row->deskripsi;
                         foreach($arr_field_save as $value) {
                             if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
@@ -244,7 +245,7 @@ class MKuesioner extends CI_Model {
                         }
                         //membuat string data yang akan digunakan dalam coding
                         $str_to_throw = $row->data_helper;
-                        $arr_field_throw = explode(';', $str_to_throw);
+                        $arr_field_throw = explode($row->separator, $str_to_throw);
                         foreach($arr_field_throw as $value) {
                             if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
                                 $field_throw = str_replace('}', '', str_replace('{', '', $value));
@@ -257,7 +258,8 @@ class MKuesioner extends CI_Model {
                             'deskripsi' => $deskripsi_return,
                             'custom_data' => $str_to_save,
                             'respondent_id' => $str_func(),
-                            'throwed_data' => $str_to_throw
+                            'throwed_data' => $str_to_throw,
+                            'separator' => $row->separator
                         );
                     }
                 }
@@ -305,7 +307,7 @@ class MKuesioner extends CI_Model {
     function get_kuesioner_data($id_for_search, $id_periode_for_search) {
         if (!empty($id_for_search)) {
             $db_dflt = $this->load->database('default', TRUE);
-            $sql = "SELECT p.deskripsi, p.respondent_id, mk.custom_header, p.custom_data_format, MAX(pp.jml_pilihan) AS jml_pilihan, MAX(pp2.jml_pilihan2) AS jml_pilihan2
+            $sql = "SELECT p.deskripsi, p.respondent_id, p.separator, mk.custom_header, p.custom_data_format, MAX(pp.jml_pilihan) AS jml_pilihan, MAX(pp2.jml_pilihan2) AS jml_pilihan2
                 FROM periode p
                 LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
                 LEFT OUTER JOIN master_pertanyaan mp ON p.id_kuesioner = mp.id_kuesioner

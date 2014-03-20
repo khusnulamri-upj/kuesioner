@@ -7,6 +7,89 @@ class MLaporan extends CI_Model {
         parent::__construct();
     }
     
+    function edom_0_get_tahun() {
+        //from sisfo
+        $db_dflt = $this->load->database('sisfo', TRUE);
+        $sql = "SELECT k.TahunID AS deskripsi, k.TahunID AS tahun
+            FROM krs k
+            GROUP BY k.TahunID
+            ORDER BY k.TahunID DESC";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
+    }
+    
+    function edom_0_get_list_mk_dan_dosen($arr_tahun = NULL) {
+        $in_tahun = "IN (";
+        if ($arr_tahun == NULL) {
+            return FALSE;
+        } else {
+            foreach ($arr_tahun as $value) {
+                $in_tahun .= $value.',';
+            }
+            $in_tahun = substr($in_tahun, 0, (strlen($in_tahun)-1));
+        }
+        $in_tahun .= ")";
+        //from sisfo
+        $db_dflt = $this->load->database('sisfo', TRUE);
+        $sql = "SELECT *
+            FROM (
+            SELECT j.JadwalID, j.KodeID, j.TahunID, j.ProdiID, j.ProgramID, j.MKID, j.MKKode, j.Nama AS Nama_MK, j.HariID, h.Nama AS Hari, j.JamMulai, j.JamSelesai, j.RuangID,
+            j.DosenID, d.Nama AS Nama_Dosen, 1 AS order_no
+            FROM jadwal j
+            LEFT OUTER JOIN dosen d ON j.DosenID = d.Login
+            LEFT OUTER JOIN hari h ON j.HariID = h.HariID
+            WHERE j.TahunID ".$in_tahun." AND j.NA = 'N'
+            UNION
+            SELECT j.JadwalID, j.KodeID, j.TahunID, j.ProdiID, j.ProgramID, j.MKID, j.MKKode, j.Nama AS Nama_MK, j.HariID, h.Nama AS Hari, j.JamMulai, j.JamSelesai, j.RuangID,
+            jd.DosenID, d.Nama AS Nama_Dosen, 2 AS order_no
+            FROM jadwal j
+            LEFT OUTER JOIN jadwaldosen jd ON j.JadwalID = jd.JadwalID
+            LEFT OUTER JOIN dosen d ON jd.DosenID = d.Login
+            LEFT OUTER JOIN hari h ON j.HariID = h.HariID
+            WHERE j.TahunID ".$in_tahun." AND j.NA = 'N'
+            ) a
+            WHERE a.DosenID IS NOT NULL
+            GROUP BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.DosenID
+            ORDER BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.order_no, a.Nama_Dosen";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
+    }
+    
+    function edom_0_get_kuesioner_data_pilihan($obj_parameter = NULL) {
+        if ($obj_parameter == NULL) {
+            return FALSE;
+        }
+        //from sisfo
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT vv.id_pertanyaan, AVG(p.nilai) AS rata_rata
+            FROM jawaban_edom vv
+            LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
+            WHERE vv.TahunID = '".$obj_parameter->TahunID."'
+            AND vv.MKKode = '".$obj_parameter->MKKode."'
+            AND vv.Nama_MK LIKE '".$obj_parameter->Nama_MK."'
+            AND vv.HariID = '".$obj_parameter->HariID."'
+            AND vv.JamMulai = '".$obj_parameter->JamMulai."'
+            AND vv.JamSelesai = '".$obj_parameter->JamSelesai."'
+            AND vv.RuangID = '".$obj_parameter->RuangID."'
+            AND vv.DosenID = '".$obj_parameter->DosenID."'
+            AND vv.jawaban_isian IS NULL
+            GROUP BY vv.id_pertanyaan";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
+    }
+    
     function edom_get_tahun() {
         //from jawaban
         /*$db_dflt = $this->load->database('default', TRUE);

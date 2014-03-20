@@ -80,7 +80,7 @@ class Kuesioner extends CI_Controller {
                 //print_r(strlen($obj->throwed_data).'-');
                 //if (strlen($obj->throwed_data) > 0) {
                     $str_throwed_data = $obj->throwed_data;
-                    $arr_throwed_data = explode(';', $str_throwed_data);
+                    $arr_throwed_data = explode($obj->separator, $str_throwed_data);
                     foreach($arr_throwed_data as $val) {
                         $arr_throwed_data2 = explode('=', $val);
                         $$arr_throwed_data2[0] = $arr_throwed_data2[1];
@@ -182,8 +182,8 @@ class Kuesioner extends CI_Controller {
                 
         if ((!empty($kuesioner_data->custom_header)) && (!empty($custom_data))) {
             $str_header = $kuesioner_data->custom_header;
-            $arr_for_index = explode(';', $kuesioner_data->custom_data_format);
-            $arr_for_value = explode(';', $custom_data);
+            $arr_for_index = explode($kuesioner_data->separator, $kuesioner_data->custom_data_format);
+            $arr_for_value = explode($kuesioner_data->separator, $custom_data);
             $ii = 0;
             foreach ($arr_for_index as $for_index) {
                 $str_header = str_replace($for_index, $arr_for_value[$ii++], $str_header);

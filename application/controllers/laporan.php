@@ -15,7 +15,7 @@ class Laporan extends CI_Controller {
     }
     
     //per dosen per mata kuliah
-    public function edom_1() {
+    /*public function edom_1() {
         if ($this->input->post('submit') == 'Lihat') {
             $newdata = array(
                 'edom_1_tahun' => $this->input->post('edom_1_tahun'),
@@ -91,6 +91,74 @@ class Laporan extends CI_Controller {
     }
     
     public function edom_1f() {
+        print_r($this->input->post('submit'));
+        
+    }*/
+    
+    public function edom_0() {
+        $this->load->model('mLaporan');
+        
+        if ($this->input->post('submit') == 'Lihat') {
+            $newdata = array(
+                'edom_0_tahun' => $this->input->post('edom_0_tahun')
+            );
+            $this->session->set_userdata($newdata);
+            //print_r($this->session->userdata('tahun'));
+            redirect(current_url(), 'location');
+        }
+        print_r($this->session->all_userdata());
+        $sess_tahun = $this->session->userdata('edom_0_tahun');
+        
+        $list_tahun = $this->mLaporan->edom_0_get_tahun();
+        $data['html'] = '<form method="POST" action="'.site_url('laporan/edom_0').'">';
+        $data['html'] .= '<table><tr>';
+        $data['html'] .= '<td>Tahun : </td><td><select name="edom_0_tahun[]" multiple="multiple">';
+        foreach ($list_tahun as $obj) {
+            $selected = '';
+            if (is_array($sess_tahun)) {
+                if (in_array($obj->tahun, $sess_tahun) ) {
+                    $selected = ' selected="selected"';
+                }
+            }
+            $data['html'] .= '<option value="'.$obj->tahun.'"'.$selected.'>'.$obj->deskripsi.'</option>';
+        }
+        $data['html'] .= '</select></td>';
+        
+        $data['html'] .= '</tr></table>';
+        $data['html'] .= '<input name="submit" type="submit" value="Lihat">';
+        $data['html'] .= '</form>';
+        echo $data['html'];
+        
+        $list_data = $this->mLaporan->edom_0_get_list_mk_dan_dosen($sess_tahun);
+        if ($list_data != FALSE) {
+            $i = 1;
+            $html_data = '<table>';
+            $row_before = new stdClass();
+            foreach ($list_data as $obj) {
+                if (is_object($row_before)) {
+                    if (!property_exists($row_before,'TahunID')) {
+                        $html_data .= '<tr><td colspan="3"><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
+                    } else if ($row_before->TahunID != $obj->TahunID) {
+                        $html_data .= '<tr><td colspan="3"><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
+                    }
+                }
+                $html_data .= '<tr>';
+                $html_data .= '<td>'.$i++.'</td><td>'.$obj->JadwalID.$obj->MKKode.'</td><td>'.$obj->Nama_MK.'</td><td>'.$obj->Hari.',</td><td>'.substr($obj->JamMulai,0,-3).' - '.substr($obj->JamSelesai,0,-3).'</td><td>'.$obj->RuangID.'</td><td>'.$obj->order_no.' '.$obj->Nama_Dosen.'</td>';
+                $list_data_pilihan = $this->mLaporan->edom_0_get_kuesioner_data_pilihan($obj);
+                if ($list_data_pilihan != FALSE) { 
+                    foreach ($list_data_pilihan as $obj2) {
+                        $html_data .= '<td>'.$obj2->rata_rata.'</td>';
+                    }
+                }
+                $html_data .= '</tr>';
+                $row_before = $obj;
+            }
+            $html_data .= '</table>';
+            echo $html_data;
+        }
+    }
+    
+    public function edom_0f() {
         print_r($this->input->post('submit'));
         
     }
