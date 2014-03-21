@@ -137,13 +137,13 @@ class Laporan extends CI_Controller {
             foreach ($list_data as $obj) {
                 if (is_object($row_before)) {
                     if (!property_exists($row_before,'TahunID')) {
-                        $html_data .= '<tr><td colspan="3"><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
+                        $html_data .= '<tr><td></td><td colspan="5"><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
                     } else if ($row_before->TahunID != $obj->TahunID) {
-                        $html_data .= '<tr><td colspan="3"><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
+                        $html_data .= '<tr><td></td><td colspan="5"><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
                     }
                 }
                 $html_data .= '<tr>';
-                $html_data .= '<td>'.$i++.'</td><td>'.$obj->JadwalID.$obj->MKKode.'</td><td>'.$obj->Nama_MK.'</td><td>'.$obj->Hari.',</td><td>'.substr($obj->JamMulai,0,-3).' - '.substr($obj->JamSelesai,0,-3).'</td><td>'.$obj->RuangID.'</td><td>'.$obj->order_no.' '.$obj->Nama_Dosen.'</td>';
+                $html_data .= '<td>'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td>';
                 $list_data_pilihan = $this->mLaporan->edom_0_get_kuesioner_data_pilihan($obj);
                 if ($list_data_pilihan != FALSE) { 
                     foreach ($list_data_pilihan as $obj2) {

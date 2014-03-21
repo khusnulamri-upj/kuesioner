@@ -411,6 +411,21 @@ class MKuesioner extends CI_Model {
         return $arr_checker;
     }
     
+    function get_next_respon_ke($respondent_id, $custom_data) {
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT IF(MAX(respon_ke) IS NULL,0,MAX(respon_ke))+1 AS next_respon_ke "
+                . "FROM jawaban "
+                . "WHERE custom_data = '".$custom_data."' "
+                . "AND respondent_id = '".$respondent_id."'";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() == 1) {
+            $obj = $query->row();
+            return $obj->next_respon_ke;
+        }
+        return 1;
+    }
+    
     function insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban, $custom_data) {
         $db_dflt = $this->load->database('default', TRUE);
         $db_dflt->trans_start();
@@ -419,7 +434,8 @@ class MKuesioner extends CI_Model {
         $data_header = array(
             'id_periode' => $id_periode,
             'id_kuesioner' => $id_kuesioner,
-            'respondent_id' => $respondent_id);
+            'respondent_id' => $respondent_id,
+            'respon_ke' => $this->get_next_respon_ke($respondent_id, $custom_data));
         if ($custom_data != NULL) {
                 $data_header['custom_data'] = $custom_data;
             }
@@ -456,6 +472,7 @@ class MKuesioner extends CI_Model {
                 $col_jawaban => $jawaban,
             );*/
             //print_r($data_mysql);
+            $data_mysql['respon_ke'] = $data_header['respon_ke'];
             $db_dflt->insert('jawaban', $data_mysql);
         }
         //exit();
