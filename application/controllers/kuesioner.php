@@ -66,7 +66,7 @@ class Kuesioner extends CI_Controller {
                 $enable_kuesioner = 'class="disabled-button boxed" href="#"';
                 $btn_enabled = FALSE;
                 if ($obj->is_filled == FALSE) {
-                     $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'"';
+                     $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data.'/'.$obj->custom_data2))).'"';
                      $btn_enabled = TRUE;
                      $is_exist = 'TRUE';
                 }
@@ -166,6 +166,16 @@ class Kuesioner extends CI_Controller {
                 //$html_hidden .= '<input type="hidden" name="custom_data" value="'.$custom_data.'">';
             }
         }
+        if (array_key_exists(3, $arr_dec)) {
+            if (!empty($arr_dec[3])) {
+                $custom_data2 = $arr_dec[3];
+                //VARIABLE CUSTOM FOR SAVING TO DATABASE
+                $enc_custom_data2 = $this->encrypt->encode($custom_data2);
+                $enc_str_custom_data2 = $this->encrypt->encode('custom_data2');
+                $html_hidden .= '<input type="hidden" name="'.$enc_str_custom_data2.'" value="'.$enc_custom_data2.'">';
+                //$html_hidden .= '<input type="hidden" name="custom_data" value="'.$custom_data.'">';
+            }
+        }
         //VARIABLE REQUIRED FOR SAVING TO DATABASE
         $enc_id_periode = $this->encrypt->encode($id_periode);
         $enc_str_id_periode = $this->encrypt->encode('id_periode');
@@ -195,6 +205,14 @@ class Kuesioner extends CI_Controller {
             }
         }
         
+        $str_config_kuesioner = $kuesioner_data->config_kuesioner;
+        $arr_config_kuesioner = explode(';', $str_config_kuesioner);
+        $config_kuesioner = array();
+        foreach ($arr_config_kuesioner as $value_config) {
+            $arr_temp = explode('=', $value_config);
+            $config_kuesioner[$arr_temp[0]] = $arr_temp[1];
+        }
+        
         $list_pertanyaan = $this->mKuesioner->get_form($id_kuesioner);
         $index = 0;
         $for_colspan = 1;
@@ -220,16 +238,28 @@ class Kuesioner extends CI_Controller {
                     $arr_val = $this->mKuesioner->get_all_value_pilihan($obj->id_grup_pilihan);
                     //print_r($arr_val);
                     for ($i = 1; $i <= $obj->jml_pilihan; $i++) {
-                        $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val[($i-1)]->id_pilihan).'"></td>';
+                        $cause_config = '';
+                        if (array_key_exists('dflt_pilihan',$config_kuesioner)) {
+                            if (intval($config_kuesioner['dflt_pilihan']) == $i) {
+                                $cause_config = ' checked="true"';
+                            }
+                        }
+                        $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val[($i-1)]->id_pilihan).'"'.$cause_config.'></td>';
                     }
                     if (!empty($obj->jml_pilihan2)) {
+                        $cause_config = '';
+                        if (array_key_exists('dflt_pilihan2',$config_kuesioner)) {
+                            if ($config_kuesioner['dflt_pilihan2'] == $i) {
+                                $cause_config = ' checked="true"';
+                            }
+                        }
                         $arr_val2 = $this->mKuesioner->get_all_value_pilihan($obj->id_grup_pilihan2);
                         //print_r($arr_val2);
                         $enc_id_pertanyaan = $this->encrypt->encode('pilihan2tanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
                         //$html_radio .= '</td><td>&nbsp;</td><td>';
                         $html_radio .= '<td></td>';
                         for ($i = 1; $i <= $obj->jml_pilihan2; $i++) {
-                            $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val2[($i-1)]->id_pilihan).'"></td>';
+                            $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val2[($i-1)]->id_pilihan).'"'.$cause_config.'></td>';
                         }
                     }
                     //$html_pertanyaan .= '<td>'.$html_radio.'</td>';
@@ -259,7 +289,32 @@ class Kuesioner extends CI_Controller {
             $is_id_kuesioner = strpos($index, 'id_kuesioner');
             $is_respondent_id = strpos($index, 'respondent_id');
             $is_pertanyaan = strpos($index, 'tanya');
-            $is_custom_data = strpos($index, 'custom_data');
+            
+            /*$is_custom_data = strpos($index, 'custom_data');
+            if ($is_custom_data !== FALSE) {
+                if (strlen($index) == 'custom_data') {
+                    $is_custom_data = TRUE;
+                } else {
+                    $is_custom_data = FALSE;
+                }
+            }
+            $is_custom_data2 = strpos($index, strlen('custom_data2'));
+            if ($is_custom_data2 !== FALSE) {
+                if (strlen($index) == 'custom_data2') {
+                    $is_custom_data2 = TRUE;
+                } else {
+                    $is_custom_data2 = FALSE;
+                }
+            }*/
+            $is_custom_data = FALSE;
+            if ($index == 'custom_data') {
+                $is_custom_data = TRUE;
+            }
+            $is_custom_data2 = FALSE;
+            if ($index == 'custom_data2') {
+                $is_custom_data2 = TRUE;
+            }
+            
             if ($is_previous_url_data !== FALSE) {
                 $previous_url_data = $value;
             }
@@ -289,6 +344,12 @@ class Kuesioner extends CI_Controller {
             if ($is_custom_data !== FALSE) {
                 $custom_data = $this->encrypt->decode($value);
             }
+            if ($is_custom_data2 !== FALSE) {
+                $custom_data2 = $this->encrypt->decode($value);
+            }
+            if (empty($custom_data2)) {
+                $custom_data2 = '';
+            }
             //print_r($custom_data);
             //print_r($index);
         }
@@ -307,11 +368,11 @@ class Kuesioner extends CI_Controller {
         if (count($is_pass) > 0) {
             $data['html'] = '<table>';
             $data['html'] .= '<tr><td>Harap mengisi kuesioner dengan benar.</td></tr>';
-            $data['html'] .= '<tr class="centered"><td><a href="'.site_url('/kuesioner/start/'.$previous_url_data).'">Kembali</a></td></tr>';
+            $data['html'] .= '<tr class="centered"><td><a class="button boxed" href="'.site_url('/kuesioner/start/'.$previous_url_data).'">Kembali</a></td></tr>';
             $data['html'] .= '</table>';
             $this->load->view('kuesioner/message_kuesioner',$data);
         } else {
-            $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data);
+            $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data,$custom_data2);
             //print_r($id_periode);
             //print_r($id_kuesioner);
             //print_r($respondent_id);
@@ -319,7 +380,7 @@ class Kuesioner extends CI_Controller {
             //redirect(site_url('/kuesioner'));
             $data['html'] = '<table>';
             $data['html'] .= '<tr><td>Terima kasih telah mengisi kuesioner ini.</td></tr>';
-            $data['html'] .= '<tr class="centered"><td><a href="'.site_url('/kuesioner').'">Lanjut</a></td></tr>';
+            $data['html'] .= '<tr class="centered"><td><a class="button boxed" href="'.site_url('/kuesioner').'">Lanjut</a></td></tr>';
             $data['html'] .= '</table>';
             $this->load->view('kuesioner/message_kuesioner',$data);
         }

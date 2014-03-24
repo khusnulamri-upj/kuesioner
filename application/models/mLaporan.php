@@ -22,7 +22,7 @@ class MLaporan extends CI_Model {
         return FALSE;
     }
     
-    function edom_0_get_list_mk_dan_dosen($arr_tahun = NULL) {
+    function edom_0_get_list_jadwal($arr_tahun = NULL) {
         $in_tahun = "IN (";
         if ($arr_tahun == NULL) {
             return FALSE;
@@ -63,13 +63,13 @@ class MLaporan extends CI_Model {
         return FALSE;
     }
     
-    function edom_0_get_kuesioner_data_pilihan($obj_parameter = NULL) {
+    function edom_0_get_calc_data_each_pilihan_per_jadwal($obj_parameter = NULL) {
         if ($obj_parameter == NULL) {
             return FALSE;
         }
         //from sisfo
         $db_dflt = $this->load->database('default', TRUE);
-        $sql = "SELECT vv.id_pertanyaan, AVG(p.nilai) AS rata_rata
+        $sql = "SELECT vv.id_pertanyaan, ROUND(AVG(p.nilai),2) AS rata_rata
             FROM jawaban_edom vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
             WHERE vv.TahunID = '".$obj_parameter->TahunID."'
@@ -82,6 +82,34 @@ class MLaporan extends CI_Model {
             AND vv.DosenID = '".$obj_parameter->DosenID."'
             AND vv.jawaban_isian IS NULL
             GROUP BY vv.id_pertanyaan";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
+    }
+    
+    function edom_0_get_respondent_data_per_jadwal($obj_parameter = NULL) {
+        if ($obj_parameter == NULL) {
+            return FALSE;
+        }
+        //from sisfo
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT vvv.respon_ke, COUNT(vvv.respondent_id) AS respondent
+            FROM (
+            SELECT vv.respon_ke, vv.respondent_id
+            FROM jawaban_header_edom vv
+            WHERE vv.TahunID = '".$obj_parameter->TahunID."'
+            AND vv.MKKode = '".$obj_parameter->MKKode."'
+            AND vv.Nama_MK LIKE '".$obj_parameter->Nama_MK."'
+            AND vv.HariID = '".$obj_parameter->HariID."'
+            AND vv.JamMulai = '".$obj_parameter->JamMulai."'
+            AND vv.JamSelesai = '".$obj_parameter->JamSelesai."'
+            AND vv.RuangID = '".$obj_parameter->RuangID."'
+            AND vv.DosenID = '".$obj_parameter->DosenID."'
+            GROUP BY vv.respon_ke, vv.respondent_id ) vvv
+            GROUP BY vvv.respon_ke";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {

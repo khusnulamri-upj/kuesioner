@@ -243,6 +243,16 @@ class MKuesioner extends CI_Model {
                                 $deskripsi_return = str_replace($value, $row_tmp->$field_save, $deskripsi_return);
                             }
                         }
+                        //string save kedua
+                        $str_to_save2 = $row->custom_data2_format;
+                        $arr_field_save2 = explode($row->separator, $str_to_save2);
+                        foreach($arr_field_save2 as $value) {
+                            if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
+                                $field_save2 = str_replace('}', '', str_replace('{', '', $value));
+                                $str_to_save2 = str_replace($value, $row_tmp->$field_save2, $str_to_save2);
+                                $deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
+                            }
+                        }
                         //membuat string data yang akan digunakan dalam coding
                         $str_to_throw = $row->data_helper;
                         $arr_field_throw = explode($row->separator, $str_to_throw);
@@ -257,22 +267,23 @@ class MKuesioner extends CI_Model {
                             'id_kuesioner' => $row->id_kuesioner,
                             'deskripsi' => $deskripsi_return,
                             'custom_data' => $str_to_save,
+                            'custom_data2' => $str_to_save2,
                             'respondent_id' => $str_func(),
                             'throwed_data' => $str_to_throw,
                             'separator' => $row->separator
                         );
                     }
                 }
-                //DELETE KUESIONER THAT HAS BEEN FILLED
+                //DELETE KUESIONER THAT HAS BEEN FILLED (MARK that KUESIONER HAS BEEN FILLED)
                 $db_delete = $this->load->database('default', TRUE);
                 /*$sql_delete = "SELECT j.id_periode, j.id_kuesioner, j.respondent_id, j.custom_data
                     FROM jawaban j
                     GROUP BY j.id_periode, j.id_kuesioner, j.respondent_id, j.custom_data";*/
                 
                 //USING JAWABAN_HEADER
-                $sql_delete = "SELECT jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data
+                $sql_delete = "SELECT jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data, jh.custom_data2
                     FROM jawaban_header jh
-                    GROUP BY jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data";
+                    GROUP BY jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data, jh.custom_data2";
                 
                 $qry_delete = $db_delete->query($sql_delete);
                 $db_delete->close();
@@ -284,7 +295,8 @@ class MKuesioner extends CI_Model {
                         if (($obj_del->id_periode == $obj_ori->id_periode) &&
                                 ($obj_del->id_kuesioner == $obj_ori->id_kuesioner) &&
                                 ($obj_del->respondent_id == $obj_ori->respondent_id) &&
-                                ($obj_del->custom_data == $obj_ori->custom_data)) {
+                                ($obj_del->custom_data == $obj_ori->custom_data) &&
+                                ($obj_del->custom_data2 == $obj_ori->custom_data2)) {
                             $is_diff = FALSE;
                         }
                     }
@@ -307,7 +319,7 @@ class MKuesioner extends CI_Model {
     function get_kuesioner_data($id_for_search, $id_periode_for_search) {
         if (!empty($id_for_search)) {
             $db_dflt = $this->load->database('default', TRUE);
-            $sql = "SELECT p.deskripsi, p.respondent_id, p.separator, mk.custom_header, p.custom_data_format, MAX(pp.jml_pilihan) AS jml_pilihan, MAX(pp2.jml_pilihan2) AS jml_pilihan2
+            $sql = "SELECT p.deskripsi, p.respondent_id, p.separator, mk.custom_header, p.custom_data_format, MAX(pp.jml_pilihan) AS jml_pilihan, MAX(pp2.jml_pilihan2) AS jml_pilihan2, mk.config_kuesioner
                 FROM periode p
                 LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
                 LEFT OUTER JOIN master_pertanyaan mp ON p.id_kuesioner = mp.id_kuesioner
@@ -426,7 +438,7 @@ class MKuesioner extends CI_Model {
         return 1;
     }
     
-    function insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban, $custom_data) {
+    function insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban, $custom_data, $custom_data2) {
         $db_dflt = $this->load->database('default', TRUE);
         $db_dflt->trans_start();
         
@@ -437,8 +449,11 @@ class MKuesioner extends CI_Model {
             'respondent_id' => $respondent_id,
             'respon_ke' => $this->get_next_respon_ke($respondent_id, $custom_data));
         if ($custom_data != NULL) {
-                $data_header['custom_data'] = $custom_data;
-            }
+            $data_header['custom_data'] = $custom_data;
+        }
+        if ($custom_data2 != NULL) {
+            $data_header['custom_data2'] = $custom_data2;
+        }
         $db_dflt->insert('jawaban_header', $data_header);
         
         foreach ($arr_jawaban as $key => $value) {
@@ -463,6 +478,9 @@ class MKuesioner extends CI_Model {
             }
             if ($custom_data != NULL) {
                 $data_mysql['custom_data'] = $custom_data;
+            }
+            if ($custom_data2 != NULL) {
+                $data_mysql['custom_data2'] = $custom_data2;
             }
             /*$data_mysql = array(
                 'id_periode' => $id_periode,

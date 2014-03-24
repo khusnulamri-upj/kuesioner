@@ -129,11 +129,12 @@ class Laporan extends CI_Controller {
         $data['html'] .= '</form>';
         echo $data['html'];
         
-        $list_data = $this->mLaporan->edom_0_get_list_mk_dan_dosen($sess_tahun);
+        $list_data = $this->mLaporan->edom_0_get_list_jadwal($sess_tahun);
         if ($list_data != FALSE) {
             $i = 1;
-            $html_data = '<table>';
+            $html_data = '<table border="1">';
             $row_before = new stdClass();
+            $header_created = FALSE;
             foreach ($list_data as $obj) {
                 if (is_object($row_before)) {
                     if (!property_exists($row_before,'TahunID')) {
@@ -143,14 +144,32 @@ class Laporan extends CI_Controller {
                     }
                 }
                 $html_data .= '<tr>';
-                $html_data .= '<td>'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td>';
-                $list_data_pilihan = $this->mLaporan->edom_0_get_kuesioner_data_pilihan($obj);
-                if ($list_data_pilihan != FALSE) { 
-                    foreach ($list_data_pilihan as $obj2) {
+                $html_data .= '<td>'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'<sup>'.$obj->DosenID.'</sup></td>';
+                
+                $respondent_data_per_jadwal = $this->mLaporan->edom_0_get_respondent_data_per_jadwal($obj);
+                $respondent_html = '<td>';
+                if ($respondent_data_per_jadwal != FALSE) { 
+                    foreach ($respondent_data_per_jadwal as $obj3) {
+                        $respondent_html .= $obj3->respondent.'<sup>'.$obj3->respon_ke.'</sup> ';
+                    }
+                }
+                $respondent_html = trim($respondent_html).'</td>';
+                $html_data .= $respondent_html;
+                
+                $calc_data_each_pilihan_per_jadwal = $this->mLaporan->edom_0_get_calc_data_each_pilihan_per_jadwal($obj);
+                if ($calc_data_each_pilihan_per_jadwal != FALSE) { 
+                    foreach ($calc_data_each_pilihan_per_jadwal as $obj2) {
                         $html_data .= '<td>'.$obj2->rata_rata.'</td>';
                     }
                 }
+                
                 $html_data .= '</tr>';
+                
+                //HEADER
+                if (!$header_created) {
+                    
+                }
+                
                 $row_before = $obj;
             }
             $html_data .= '</table>';
