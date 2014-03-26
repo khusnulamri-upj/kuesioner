@@ -52,3 +52,16 @@ if (!function_exists('sisfo_get_level')) {
     }
     
 }
+
+if (!function_exists('sisfo_is_dosen')) {
+
+    function sisfo_is_dosen() {
+        if ((!empty($_SESSION['_Login'])) && (!empty($_SESSION['_LevelID']))) {
+            if ($_SESSION['_LevelID'] == '100') {
+                return TRUE;
+            }
+        }
+        return FALSE;
+    }
+    
+}

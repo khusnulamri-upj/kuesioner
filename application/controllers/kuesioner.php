@@ -36,6 +36,7 @@ class Kuesioner extends CI_Controller {
         $data['html_form'] = $html_kuesioner;
         $this->load->view('kuesioner/list_kuesioner',$data);
     }*/
+    
     public function is_exist() {
         $this->edom('is_exist');
     }
