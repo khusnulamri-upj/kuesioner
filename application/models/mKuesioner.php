@@ -135,11 +135,20 @@ class MKuesioner extends CI_Model {
                         $str_to_save = $row->custom_data_format;
                         $arr_field_save = explode($row->separator, $str_to_save);
                         $deskripsi_return = $row->deskripsi;
+                        //deskripsi
+                        $arr_prop_tmp = get_object_vars($row_tmp);
+                        foreach($arr_prop_tmp as $key => $value) {
+                            if (strpos($deskripsi_return,'{'.$key.'}') !== FALSE) {
+                                $deskripsi_return = str_replace('{'.$key.'}', $row_tmp->$key, $deskripsi_return);
+                            }
+                        }
+                        
+                        //replace string data to save
                         foreach($arr_field_save as $value) {
                             if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
                                 $field_save = str_replace('}', '', str_replace('{', '', $value));
                                 $str_to_save = str_replace($value, $row_tmp->$field_save, $str_to_save);
-                                $deskripsi_return = str_replace($value, $row_tmp->$field_save, $deskripsi_return);
+                                //$deskripsi_return = str_replace($value, $row_tmp->$field_save, $deskripsi_return);
                             }
                         }
                         //string save kedua
@@ -149,7 +158,7 @@ class MKuesioner extends CI_Model {
                             if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
                                 $field_save2 = str_replace('}', '', str_replace('{', '', $value));
                                 $str_to_save2 = str_replace($value, $row_tmp->$field_save2, $str_to_save2);
-                                $deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
+                                //$deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
                             }
                         }
                         //membuat string data yang akan digunakan dalam coding
@@ -218,7 +227,8 @@ class MKuesioner extends CI_Model {
     function get_kuesioner_data($id_for_search, $id_periode_for_search) {
         if (!empty($id_for_search)) {
             $db_dflt = $this->load->database('default', TRUE);
-            $sql = "SELECT p.deskripsi, p.respondent_id, p.separator, mk.custom_header, p.custom_data_format, MAX(pp.jml_pilihan) AS jml_pilihan, MAX(pp2.jml_pilihan2) AS jml_pilihan2, mk.config_kuesioner
+            $sql = "SELECT p.deskripsi, p.respondent_id, p.separator, mk.custom_header, p.custom_data_format, MAX(pp.jml_pilihan) AS jml_pilihan, MAX(pp2.jml_pilihan2) AS jml_pilihan2, mk.config_kuesioner,
+                p.data_helper AS throwed_data_format, p.custom_data2_format
                 FROM periode p
                 LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
                 LEFT OUTER JOIN master_pertanyaan mp ON p.id_kuesioner = mp.id_kuesioner

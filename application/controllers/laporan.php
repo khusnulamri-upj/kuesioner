@@ -144,9 +144,9 @@ class Laporan extends CI_Controller {
     
     //per dosen per mata kuliah
     public function edom_1() {
-        if (!sisfo_is_dosen()) {
+        /*if (!sisfo_is_dosen()) {
             exit();
-        }
+        }*/
         $html_css = '<style>
             .laporan {
                 border-collapse:collapse;

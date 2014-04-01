@@ -67,7 +67,7 @@ class Kuesioner extends CI_Controller {
                 $enable_kuesioner = 'class="disabled-button boxed" href="#"';
                 $btn_enabled = FALSE;
                 if ($obj->is_filled == FALSE) {
-                     $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data.'/'.$obj->custom_data2))).'"';
+                     $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data.'/'.$obj->custom_data2.'/'.$obj->throwed_data))).'"';
                      $btn_enabled = TRUE;
                      $is_exist = 'TRUE';
                 }
@@ -177,6 +177,16 @@ class Kuesioner extends CI_Controller {
                 //$html_hidden .= '<input type="hidden" name="custom_data" value="'.$custom_data.'">';
             }
         }
+        //throwed data
+        if (array_key_exists(4, $arr_dec)) {
+            if (!empty($arr_dec[4])) {
+                $throwed_data = $arr_dec[4];
+                //$enc_custom_data2 = $this->encrypt->encode($custom_data2);
+                //$enc_str_custom_data2 = $this->encrypt->encode('custom_data2');
+                //$html_hidden .= '<input type="hidden" name="'.$enc_str_custom_data2.'" value="'.$enc_custom_data2.'">';
+                //$html_hidden .= '<input type="hidden" name="custom_data" value="'.$custom_data.'">';
+            }
+        }
         //VARIABLE REQUIRED FOR SAVING TO DATABASE
         $enc_id_periode = $this->encrypt->encode($id_periode);
         $enc_str_id_periode = $this->encrypt->encode('id_periode');
@@ -191,13 +201,35 @@ class Kuesioner extends CI_Controller {
         $data['html_form'] = '<form method="POST" action="'.site_url('kuesioner/finish').'">'.$html_hidden;
         $html_pertanyaan = '<table class="bordered">';
                 
-        if ((!empty($kuesioner_data->custom_header)) && (!empty($custom_data))) {
+        if (!empty($kuesioner_data->custom_header)) {
             $str_header = $kuesioner_data->custom_header;
-            $arr_for_index = explode($kuesioner_data->separator, $kuesioner_data->custom_data_format);
-            $arr_for_value = explode($kuesioner_data->separator, $custom_data);
-            $ii = 0;
-            foreach ($arr_for_index as $for_index) {
-                $str_header = str_replace($for_index, $arr_for_value[$ii++], $str_header);
+            //replace from throwed data
+            if (!empty($throwed_data)) {
+                $arr_for_index = explode($kuesioner_data->separator, $kuesioner_data->throwed_data_format);
+                $arr_for_value = explode($kuesioner_data->separator, $throwed_data);
+                $ii = 0;
+                foreach ($arr_for_index as $for_index) {
+                    $tmp = explode('=', $arr_for_value[$ii++]);
+                    $str_header = str_replace($for_index, $tmp[1], $str_header);
+                }
+            }
+            //replace from custom data
+            if (!empty($custom_data)) {
+                $arr_for_index = explode($kuesioner_data->separator, $kuesioner_data->custom_data_format);
+                $arr_for_value = explode($kuesioner_data->separator, $custom_data);
+                $ii = 0;
+                foreach ($arr_for_index as $for_index) {
+                    $str_header = str_replace($for_index, $arr_for_value[$ii++], $str_header);
+                }
+            }
+            //replace from custom data2
+            if (!empty($custom_data2)) {
+                $arr_for_index = explode($kuesioner_data->separator, $kuesioner_data->custom_data2_format);
+                $arr_for_value = explode($kuesioner_data->separator, $custom_data2);
+                $ii = 0;
+                foreach ($arr_for_index as $for_index) {
+                    $str_header = str_replace($for_index, $arr_for_value[$ii++], $str_header);
+                }
             }
             //print_r($arr_for_replace_header);
             $data['html_form'] .= $str_header;

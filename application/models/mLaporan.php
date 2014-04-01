@@ -35,7 +35,7 @@ class MLaporan extends CI_Model {
         $in_tahun .= ")";
         //from sisfo
         $db_dflt = $this->load->database('sisfo', TRUE);
-        $sql = "SELECT *
+        /*$sql = "SELECT *
             FROM (
             SELECT j.JadwalID, j.KodeID, j.TahunID, j.ProdiID, j.ProgramID, j.MKID, j.MKKode, j.Nama AS Nama_MK, j.HariID, h.Nama AS Hari, j.JamMulai, j.JamSelesai, j.RuangID,
             j.DosenID, d.Nama AS Nama_Dosen, 1 AS order_no
@@ -54,7 +54,31 @@ class MLaporan extends CI_Model {
             ) a
             WHERE a.DosenID IS NOT NULL
             GROUP BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.DosenID
-            ORDER BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.order_no, a.Nama_Dosen";
+            ORDER BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.order_no, a.Nama_Dosen";*/
+        $sql = "SELECT a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.DosenID, a.order_no, h.nama AS Hari, d.Nama AS Nama_Dosen
+            FROM (
+            SELECT k.TahunID, UPPER(mk.MKKode) AS MKKode, UPPER(mk.Nama) AS Nama_MK, j.HariID, j.JamMulai, j.JamSelesai, j.RuangID, j.DosenID, 1 AS order_no
+            FROM krs k
+            LEFT OUTER JOIN jadwal j ON (k.JadwalID = j.JadwalID AND k.KodeID = j.KodeID)
+            LEFT OUTER JOIN mk mk ON (j.MKID = mk.MKID AND k.KodeID = j.KodeID)
+            WHERE k.NA = 'N'
+            AND k.JadwalID <> 0
+            AND k.TahunID = '20131'
+            UNION
+            SELECT k.TahunID, UPPER(mk.MKKode) AS MKKode, UPPER(mk.Nama) AS Nama_MK, j.HariID, j.JamMulai, j.JamSelesai, j.RuangID, jd.DosenID, 2 AS order_no
+            FROM krs k
+            LEFT OUTER JOIN jadwal j ON (k.JadwalID = j.JadwalID AND k.KodeID = j.KodeID)
+            LEFT OUTER JOIN mk mk ON (j.MKID = mk.MKID AND k.KodeID = j.KodeID)
+            RIGHT OUTER JOIN jadwaldosen jd ON k.JadwalID = jd.JadwalID
+            WHERE k.NA = 'N'
+            AND k.JadwalID <> 0
+            AND k.TahunID = '20131'
+            ) a
+            LEFT OUTER JOIN hari h ON a.HariID = h.HariID
+            LEFT OUTER JOIN dosen d ON a.DosenID = d.Login
+            WHERE a.MKKode IS NOT NULL OR a.Nama_MK IS NOT NULL 
+            GROUP BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.DosenID
+            ORDER BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.order_no, a.DosenID";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {
