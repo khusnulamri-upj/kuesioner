@@ -219,6 +219,14 @@ class Kuesioner extends CI_Controller {
                 $arr_for_value = explode($kuesioner_data->separator, $custom_data);
                 $ii = 0;
                 foreach ($arr_for_index as $for_index) {
+                    /*if (strpos($for_index, $this->config->item('kuesioner_ftisfc')) !== FALSE) {
+                        $var_to_search = str_replace('}', '', str_replace('{', '', $for_index));
+                        if (isset($$var_to_search)) {
+                            $str_header = str_replace($for_index, $$var_to_search, $str_header);
+                        }
+                    } else {
+                        $str_header = str_replace($for_index, $arr_for_value[$ii++], $str_header);
+                    }*/
                     $str_header = str_replace($for_index, $arr_for_value[$ii++], $str_header);
                 }
             }
@@ -228,6 +236,14 @@ class Kuesioner extends CI_Controller {
                 $arr_for_value = explode($kuesioner_data->separator, $custom_data2);
                 $ii = 0;
                 foreach ($arr_for_index as $for_index) {
+                    /*if (strpos($for_index, $this->config->item('kuesioner_ftisfc')) !== FALSE) {
+                        $var_to_search = str_replace('}', '', str_replace('{', '', $for_index));
+                        if (isset($$var_to_search)) {
+                            $str_header = str_replace($for_index, $$var_to_search, $str_header);
+                        }
+                    } else {
+                        $str_header = str_replace($for_index, $arr_for_value[$ii++], $str_header);
+                    }*/
                     $str_header = str_replace($for_index, $arr_for_value[$ii++], $str_header);
                 }
             }
@@ -280,18 +296,18 @@ class Kuesioner extends CI_Controller {
                         $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val[($i-1)]->id_pilihan).'"'.$cause_config.'></td>';
                     }
                     if (!empty($obj->jml_pilihan2)) {
-                        $cause_config = '';
-                        if (array_key_exists('dflt_pilihan2',$config_kuesioner)) {
-                            if ($config_kuesioner['dflt_pilihan2'] == $i) {
-                                $cause_config = ' checked="true"';
-                            }
-                        }
                         $arr_val2 = $this->mKuesioner->get_all_value_pilihan($obj->id_grup_pilihan2);
                         //print_r($arr_val2);
                         $enc_id_pertanyaan = $this->encrypt->encode('pilihan2tanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
                         //$html_radio .= '</td><td>&nbsp;</td><td>';
                         $html_radio .= '<td></td>';
                         for ($i = 1; $i <= $obj->jml_pilihan2; $i++) {
+                            $cause_config = '';
+                            if (array_key_exists('dflt_pilihan2',$config_kuesioner)) {
+                                if ($config_kuesioner['dflt_pilihan2'] == $i) {
+                                    $cause_config = ' checked="true"';
+                                }
+                            }
                             $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val2[($i-1)]->id_pilihan).'"'.$cause_config.'></td>';
                         }
                     }
@@ -419,9 +435,9 @@ class Kuesioner extends CI_Controller {
         }
     }
     
-    public function sync_jawaban_to_jawaban_header() {
+    public function sync_jawaban_to_jawaban_header($id_periode = NULL) {
         $this->load->model('mKuesioner');
-        echo '#Affected Rows : '.$this->mKuesioner->sync_jawaban_to_jawaban_header();
+        echo '#Affected Rows : '.$this->mKuesioner->sync_jawaban_to_jawaban_header($id_periode);
     }
 }
 

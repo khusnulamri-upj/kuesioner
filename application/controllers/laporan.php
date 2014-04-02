@@ -80,7 +80,12 @@ class Laporan extends CI_Controller {
                 //$html_data .= '<td>'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'<sup>'.$obj->DosenID.'</sup></td>';
                 $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td>';
                 
-                $respondent_data_per_jadwal = $this->mLaporan->edom_0_get_respondent_data_per_jadwal($obj);
+                $arr_jadwal_id = $this->mLaporan->edom_0_get_jadwal_id_per_jadwal($obj);
+                //print_r('<p>'.++$oo.'</p><br/>');
+                //print_r($arr_jadwal_id);
+                
+                $respondent_data_per_jadwal = $this->mLaporan->edom_0_get_respondent_data_per_jadwal($arr_jadwal_id);
+                                
                 $respondent_html = '<td>';
                 if ($respondent_data_per_jadwal != FALSE) { 
                     foreach ($respondent_data_per_jadwal as $obj3) {
@@ -91,8 +96,7 @@ class Laporan extends CI_Controller {
                 }
                 $respondent_html = trim($respondent_html).'</td>';
                 //$html_data .= $respondent_html;
-                
-                $calc_data_each_pilihan_per_jadwal = $this->mLaporan->edom_0_get_calc_data_each_pilihan_per_jadwal($obj);
+                $calc_data_each_pilihan_per_jadwal = $this->mLaporan->edom_0_get_calc_data_each_pilihan_per_jadwal($arr_jadwal_id);
                 
                 if ($calc_data_each_pilihan_per_jadwal != FALSE) { 
                     foreach ($calc_data_each_pilihan_per_jadwal as $obj2) {

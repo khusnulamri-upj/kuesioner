@@ -1,4 +1,6 @@
 <?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 $config['kuesioner_app_base'] = 'http://localhost/sisforun/';
-//for custom_data and throwed_data
+
+//kuesioner_field_that_is_setted_from_code
+$config['kuesioner_ftisfc'] = '_CODESET_';
