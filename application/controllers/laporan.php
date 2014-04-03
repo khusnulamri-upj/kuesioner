@@ -7,7 +7,7 @@ class Laporan extends CI_Controller {
     
     function __construct() {
         parent::__construct();
-        $this->load->helper('session_helper');
+        //$this->load->helper('session_helper');
     }
     
     public function index() {

@@ -7,7 +7,7 @@ class Kuesioner extends CI_Controller {
     
     function __construct() {
         parent::__construct();
-        $this->load->helper('session_helper');
+        //$this->load->helper('session_helper');
     }
     
     public function index() {
@@ -67,7 +67,7 @@ class Kuesioner extends CI_Controller {
                 $enable_kuesioner = 'class="disabled-button boxed" href="#"';
                 $btn_enabled = FALSE;
                 if ($obj->is_filled == FALSE) {
-                     $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data.'/'.$obj->custom_data2.'/'.$obj->throwed_data))).'"';
+                     $enable_kuesioner = 'class="button boxed" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data.'/'.$obj->custom_data2.'/'.$obj->throwed_data.'/'.$obj->custom_data3))).'"';
                      $btn_enabled = TRUE;
                      $is_exist = 'TRUE';
                 }
@@ -76,7 +76,10 @@ class Kuesioner extends CI_Controller {
                 $btn_text = 'Isi Kuesioner';
                 $style1 = '';
                 //AMRNOTE: untuk men-disable kuesioner ke-2 dengan dosen dan mk yang sama
-                $session2_begin = TRUE;
+                $session2_begin = FALSE;
+                if (sisfo_is_uts_or_uas() == 'UAS') {
+                    $session2_begin = TRUE;
+                }
                 if (!empty($obj->throwed_data)) {
                 //print_r(strlen($obj->throwed_data).'-');
                 //if (strlen($obj->throwed_data) > 0) {
@@ -174,6 +177,17 @@ class Kuesioner extends CI_Controller {
                 $enc_custom_data2 = $this->encrypt->encode($custom_data2);
                 $enc_str_custom_data2 = $this->encrypt->encode('custom_data2');
                 $html_hidden .= '<input type="hidden" name="'.$enc_str_custom_data2.'" value="'.$enc_custom_data2.'">';
+                //$html_hidden .= '<input type="hidden" name="custom_data" value="'.$custom_data.'">';
+            }
+        }
+        //CUSTOM DATA 3
+        if (array_key_exists(5, $arr_dec)) {
+            if (!empty($arr_dec[5])) {
+                $custom_data3 = $arr_dec[5];
+                $enc_custom_data3 = $this->encrypt->encode($custom_data3);
+                $enc_str_custom_data3 = $this->encrypt->encode('custom_data3');
+                //print_r($custom_data3);
+                $html_hidden .= '<input type="hidden" name="'.$enc_str_custom_data3.'" value="'.$enc_custom_data3.'">';
                 //$html_hidden .= '<input type="hidden" name="custom_data" value="'.$custom_data.'">';
             }
         }
@@ -326,6 +340,7 @@ class Kuesioner extends CI_Controller {
     }
     
     public function finish() {
+        $this->load->model('mKuesioner');
         $arr_jawaban = array();
         $id_periode = NULL;
         $id_kuesioner = NULL;
@@ -363,6 +378,10 @@ class Kuesioner extends CI_Controller {
             if ($index == 'custom_data2') {
                 $is_custom_data2 = TRUE;
             }
+            $is_custom_data3 = FALSE;
+            if ($index == 'custom_data3') {
+                $is_custom_data3 = TRUE;
+            }
             
             if ($is_previous_url_data !== FALSE) {
                 $previous_url_data = $value;
@@ -397,13 +416,18 @@ class Kuesioner extends CI_Controller {
                 $custom_data2 = $this->encrypt->decode($value);
             }
             if (empty($custom_data2)) {
-                $custom_data2 = '';
+                $custom_data2 = NULL;
+            }
+            if ($is_custom_data3 !== FALSE) {
+                $custom_data3 = $this->encrypt->decode($value);
+            }
+            if (empty($custom_data3)) {
+                $custom_data3 = NULL;
             }
             //print_r($custom_data);
             //print_r($index);
         }
         
-        $this->load->model('mKuesioner');
         $is_pass = $this->mKuesioner->get_array_jawaban_checker($id_kuesioner);
         foreach ($arr_jawaban as $key => $val) {
             if ($val->tipe == 'isian') {
@@ -421,7 +445,31 @@ class Kuesioner extends CI_Controller {
             $data['html'] .= '</table>';
             $this->load->view('kuesioner/message_kuesioner',$data);
         } else {
-            $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data,$custom_data2);
+            //AMRNOTE--START: for assign _CODE_SET_
+            // _CODE_SET_utsatauuas
+            $_CODE_SET_utsatauuas = sisfo_is_uts_or_uas();    
+            //AMRNOTE-- END : for assign _CODE_SET_
+            $temp_data = $this->mKuesioner->get_periode_data($id_periode);
+            $str_to_save3 = $custom_data3;
+            //replace _CODE_SET_
+            $arr_field_save3 = explode($temp_data->separator, $str_to_save3);
+            if (sizeof($arr_field_save3) > 0) {
+                foreach($arr_field_save3 as $value) {
+                    if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
+                        if (strpos($value, $this->config->item('kuesioner_ftisfc')) !== FALSE) {
+                            $var3 = str_replace('}', '', str_replace('{', '', $value));
+                            if (isset($$var3)) {
+                                $str_to_save3 = str_replace($value, $$var3, $str_to_save3);
+                            } else {
+                                //exit('#Check your error. @KsnFnsh');
+                            }
+                        }
+                    }
+                }
+            }
+            $custom_data3 = $str_to_save3;
+            
+            $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data,$custom_data2,$custom_data3);
             //print_r($id_periode);
             //print_r($id_kuesioner);
             //print_r($respondent_id);

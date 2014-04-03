@@ -65,3 +65,37 @@ if (!function_exists('sisfo_is_dosen')) {
     }
     
 }
+
+if (!function_exists('sisfo_is_uts_or_uas')) {
+
+    function sisfo_is_uts_or_uas() {
+        $hostname = 'localhost';
+        $username = 'root';
+        $password = 'Upeje2013';
+        $database = 'sisforn';
+        
+        $return = 'UTS';
+        
+        try {
+            $db = new PDO('mysql:host='.$hostname.';dbname='.$database.'',
+                    $username,
+                    $password,
+                    array( PDO::ATTR_EMULATE_PREPARES => false, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+            
+            $sql_query = "SELECT MAX( t.TglUTSSelesai ) AS TglUTSSelesai, NOW( ) AS TglSekarang, IF( DATE_ADD( MAX( t.TglUTSSelesai ) , INTERVAL 1 DAY ) <= NOW( ) , 'UAS', 'UTS' ) AS periode
+                FROM tahun t
+                WHERE t.NA = 'N'";
+            
+            $stmt = $db->query($sql_query);
+            $result = $stmt->fetch(PDO::FETCH_OBJ);
+            
+            $return = $result->periode;
+        } catch (PDOException $e) {
+            print "Error!: " . $e->getMessage() . "<br/>";
+            die();
+        }
+
+        return $return;
+    }
+    
+}

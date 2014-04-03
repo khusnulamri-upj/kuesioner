@@ -141,8 +141,14 @@ class MKuesioner extends CI_Model {
             foreach ($query->result() as $row) {
                 $arr_obj_return = array();
                 //CREATE ALL LIST KUESIONER AVAIBLE FOR THIS RESPONDENT_ID
-                if ((strpos($row->respondent_id,'()') === FALSE) || (strpos($row->generator_config,'db=') === FALSE) || (strpos($row->generator_config,'sql=') === FALSE) || (empty($row->separator))) {
-                    exit('#Check your periode config.');
+                if (strpos($row->respondent_id,'()') === FALSE) {
+                    exit('#Check your config. @Prd07');
+                }
+                if ((strpos($row->generator_config,'db=') === FALSE) || (strpos($row->generator_config,'sql=') === FALSE)) {
+                    exit('#Check your config. @Prd08');
+                }
+                if (empty($row->separator)) {
+                    exit('#Check your config. @Prd09');
                 }
                 if (!empty($row->generator_config)) {
                     //menjalankan query dari config untuk me-generate form kuesioner
@@ -167,10 +173,10 @@ class MKuesioner extends CI_Model {
                         $str_to_save = $row->custom_data_format;
                         $arr_field_save = explode($row->separator, $str_to_save);
                         //replace string data to save
-                        if (sizeof($arr_field_save) > 0) {
+                        if ((sizeof($arr_field_save) > 0) && (!empty($arr_field_save[0]))) {
                             foreach($arr_field_save as $value) {
                                 if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
-                                    if (strpos($value, $this->config->item('kuesioner_ftisfc')) !== FALSE) {
+                                    if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
                                         $field_save = str_replace('}', '', str_replace('{', '', $value));
                                         $str_to_save = str_replace($value, $row_tmp->$field_save, $str_to_save);
                                         //$deskripsi_return = str_replace($value, $row_tmp->$field_save, $deskripsi_return);
@@ -178,7 +184,7 @@ class MKuesioner extends CI_Model {
                                 }
                             }
                         } else {
-                            exit('#Check your periode config.');
+                            exit('#Check your config. @Prd10');
                         }
                         //string save kedua
                         $str_to_save2 = $row->custom_data2_format;
@@ -189,6 +195,23 @@ class MKuesioner extends CI_Model {
                                     if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
                                         $field_save2 = str_replace('}', '', str_replace('{', '', $value));
                                         $str_to_save2 = str_replace($value, $row_tmp->$field_save2, $str_to_save2);
+                                        //$deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
+                                    }
+                                }
+                            }
+                        }
+                        //string save ketiga
+                        $str_to_save3 = $row->custom_data3_format;
+                        $arr_field_save3 = explode($row->separator, $str_to_save3);
+                        if (sizeof($arr_field_save3) > 0) {
+                            foreach($arr_field_save3 as $value) {
+                                if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
+                                    if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
+                                        $field_save3 = str_replace('}', '', str_replace('{', '', $value));
+                                        if (!property_exists($row_tmp,$field_save3)) {
+                                            exit('#Check your config. @Prd12');
+                                        }
+                                        $str_to_save3 = str_replace($value, $row_tmp->$field_save3, $str_to_save3);
                                         //$deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
                                     }
                                 }
@@ -211,10 +234,12 @@ class MKuesioner extends CI_Model {
                             'deskripsi' => $deskripsi_return,
                             'custom_data' => $str_to_save,
                             'custom_data2' => $str_to_save2,
+                            'custom_data3' => $str_to_save3,
                             'respondent_id' => $str_func(),
                             'throwed_data' => $str_to_throw,
                             'separator' => $row->separator
                         );
+                        //print_r($str_to_save3);
                     }
                 }
                 //DELETE KUESIONER THAT HAS BEEN FILLED (MARK that KUESIONER HAS BEEN FILLED)
@@ -395,7 +420,7 @@ class MKuesioner extends CI_Model {
         return 1;
     }
     
-    function insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban, $custom_data, $custom_data2) {
+    function insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban, $custom_data, $custom_data2 = NULL, $custom_data3 = NULL) {
         $obj_periode = $this->get_periode_data($id_periode);
         
         $db_dflt = $this->load->database('default', TRUE);
@@ -412,6 +437,9 @@ class MKuesioner extends CI_Model {
         }
         if ($custom_data2 != NULL) {
             $data_header['custom_data2'] = $custom_data2;
+        }
+        if ($custom_data3 != NULL) {
+            $data_header['custom_data3'] = $custom_data3;
         }
         //$db_dflt->insert('jawaban_header', $data_header);
         $db_dflt->insert($obj_periode->tabel_jawaban_header, $data_header);
@@ -445,6 +473,9 @@ class MKuesioner extends CI_Model {
             }
             if ($custom_data2 != NULL) {
                 $data_mysql['custom_data2'] = $custom_data2;
+            }
+            if ($custom_data2 != NULL) {
+                $data_mysql['custom_data3'] = $custom_data3;
             }
             /*$data_mysql = array(
                 'id_periode' => $id_periode,
