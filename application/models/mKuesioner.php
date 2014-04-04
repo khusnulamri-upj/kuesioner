@@ -405,10 +405,12 @@ class MKuesioner extends CI_Model {
         return $arr_checker;
     }
     
-    function get_next_respon_ke($respondent_id, $custom_data) {
+    function get_next_respon_ke($id_periode, $respondent_id, $custom_data) {
+        $obj_periode = $this->get_periode_data($id_periode);
+        
         $db_dflt = $this->load->database('default', TRUE);
         $sql = "SELECT IF(MAX(respon_ke) IS NULL,0,MAX(respon_ke))+1 AS next_respon_ke "
-                . "FROM jawaban "
+                . "FROM ".$obj_periode->tabel_jawaban." "
                 . "WHERE custom_data = '".$custom_data."' "
                 . "AND respondent_id = '".$respondent_id."'";
         $query = $db_dflt->query($sql);
@@ -431,7 +433,7 @@ class MKuesioner extends CI_Model {
             'id_periode' => $id_periode,
             'id_kuesioner' => $id_kuesioner,
             'respondent_id' => $respondent_id,
-            'respon_ke' => $this->get_next_respon_ke($respondent_id, $custom_data));
+            'respon_ke' => $this->get_next_respon_ke($id_periode, $respondent_id, $custom_data));
         if ($custom_data != NULL) {
             $data_header['custom_data'] = $custom_data;
         }

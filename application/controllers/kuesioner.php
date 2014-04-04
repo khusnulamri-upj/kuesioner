@@ -447,7 +447,11 @@ class Kuesioner extends CI_Controller {
         } else {
             //AMRNOTE--START: for assign _CODE_SET_
             // _CODE_SET_utsatauuas
-            $_CODE_SET_utsatauuas = sisfo_is_uts_or_uas();    
+            if ($custom_data2 == 2) {
+                $_CODE_SET_edom_timing = sisfo_is_uts_or_uas(); //UTS or UAS
+            } else {
+                $_CODE_SET_edom_timing = 'UTS';
+            }
             //AMRNOTE-- END : for assign _CODE_SET_
             $temp_data = $this->mKuesioner->get_periode_data($id_periode);
             $str_to_save3 = $custom_data3;
