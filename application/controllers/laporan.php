@@ -12,9 +12,11 @@ class Laporan extends CI_Controller {
     
     public function index() {
         $this->session->sess_destroy();
+        $this->load->model('mLaporan');
+        $this->mLaporan->edom_0_process_rata2(array('20131'));
     }
     
-    public function edom_0() {
+    /*public function edom_0() {
         $html_css = '<style>
             .laporan {
                 border-collapse:collapse;
@@ -103,7 +105,7 @@ class Laporan extends CI_Controller {
                         $html_data .= '<td align="center">'.$obj2->nilai.'</td>';
                         if (!$is_empty_data_layout_created) {
                             $empty_data_layout .= '<td>&nbsp;</td>';
-                            if ($obj2->id != 'FOOTER') {
+                            if ($obj2->id != 'TOTAL') {
                                 $header_html_data .= '<th>'.++$ii.'</th>';
                                 $html_data_footer = '<th rowspan="2">Rata- Rata</th>';
                             }
@@ -125,6 +127,215 @@ class Laporan extends CI_Controller {
             
             $empty_data_layout = substr($empty_data_layout, 4);
             $empty_data_layout = substr($empty_data_layout, 0, -5);
+            
+            //print_r(html_escape($empty_data_layout));
+            
+            $html_data = str_replace('{no_data}', $empty_data_layout, $html_data);
+            $html_data = str_replace('{no_respondent}', '&nbsp;', $html_data);
+            
+            if ($header_html_data == '') {
+                $header_html_data = '<th></th>';
+            }
+            //$html_header = '<tr><th rowspan="2">No</th><th rowspan="2">Mata Kuliah</th><th rowspan="2" colspan="3">Jadwal</th><th rowspan="2">Nama Dosen</th><th colspan="'.$ii.'">Pertanyaan</th><th rowspan="2">Rata-rata</th></tr><tr>'.$header_html_data.'</tr>';
+            $html_header = '<tr><th rowspan="2">No</th><th rowspan="2">Mata Kuliah</th><th colspan="3">Jadwal</th><th rowspan="2">Nama Dosen</th><th colspan="'.$ii.'">Pertanyaan</th>'.$html_data_footer.'<th rowspan="2">Keterangan</th></tr><tr><th>Hari</th><th>Jam</th><th>Kelas</th>'.$header_html_data.'</tr>';
+            $html_data = str_replace('{table_header}', $html_header, $html_data);
+            
+            $html_data = str_replace('{colspan_1}', ' colspan="'.(5+$ii+2).'"', $html_data); 
+            
+            //echo $html_data;
+            $data['html'] .= $html_data;
+        }
+        $this->load->view('laporan/laporan',$data);
+    }*/
+    
+    public function edom_0() {
+        $html_css = '<style>
+            .laporan {
+                border-collapse:collapse;
+                border: 1px solid black;
+            }
+            .laporan th, .laporan td {
+                border: 1px solid black;
+            }
+            </style>';
+        $this->load->model('mLaporan');
+        
+        if ($this->input->post('submit') == 'Lihat') {
+            $newdata = array(
+                'edom_0_tahun' => $this->input->post('edom_0_tahun')
+            );
+            $this->session->set_userdata($newdata);
+            //print_r($this->session->userdata('tahun'));
+            redirect(current_url(), 'location');
+        }
+        print_r($this->session->all_userdata());
+        $sess_tahun = $this->session->userdata('edom_0_tahun');
+        
+        $list_tahun = $this->mLaporan->edom_0_get_tahun();
+        $data['html'] = $html_css.'<form method="POST" action="'.site_url('laporan/edom_0').'">';
+        $data['html'] .= '<table><tr>';
+        $data['html'] .= '<td>Tahun : </td><td><select name="edom_0_tahun[]" multiple="multiple">';
+        foreach ($list_tahun as $obj) {
+            $selected = '';
+            if (is_array($sess_tahun)) {
+                if (in_array($obj->tahun, $sess_tahun) ) {
+                    $selected = ' selected="selected"';
+                }
+            }
+            $data['html'] .= '<option value="'.$obj->tahun.'"'.$selected.'>'.$obj->deskripsi.'</option>';
+        }
+        $data['html'] .= '</select></td>';
+        
+        $data['html'] .= '</tr></table>';
+        $data['html'] .= '<input name="submit" type="submit" value="Lihat">';
+        $data['html'] .= '</form>';
+        //echo $data['html'];
+        
+        $list_data = $this->mLaporan->edom_0_get_processed_data($sess_tahun);
+        if ($list_data != FALSE) {
+            $i = 1;
+            $html_data = '<table class="laporan">{table_header}';
+            $row_before = new stdClass();
+            //$header_created = FALSE;
+            $is_empty_data_layout_created = FALSE;
+            $empty_data_layout = '';
+            $header_html_data = '';
+            $html_header_last_data = '';
+            $html_data_footer = '';
+            $ii = 0;
+            $idx = 0;
+            while (true) {
+                if (key_exists($idx, $list_data)) {
+                    $obj = $list_data[$idx];
+                } else {
+                    break;
+                }
+                
+                //row tahun
+                if (is_object($row_before)) {
+                    if (!property_exists($row_before,'TahunID')) {
+                        $html_data .= '<tr><td></td><td{colspan_1}><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
+                    } else if ($row_before->TahunID != $obj->TahunID) {
+                        $html_data .= '<tr><td></td><td{colspan_1}><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
+                    }
+                }
+                //row header
+                if ((!property_exists($row_before,'Nama_MK')) &&
+                        (!property_exists($row_before,'MKKode')) &&
+                        (!property_exists($row_before,'Hari')) &&
+                        (!property_exists($row_before,'JamMulai')) &&
+                        (!property_exists($row_before,'JamSelesai')) &&
+                        (!property_exists($row_before,'RuangID')) &&
+                        (!property_exists($row_before,'Nama_Dosen'))) {
+                    $html_data .= '<tr>';
+                    $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td>';
+                } else if (($row_before->Nama_MK != $obj->Nama_MK) ||
+                        ($row_before->MKKode != $obj->MKKode) ||
+                        ($row_before->Hari != $obj->Hari) ||
+                        ($row_before->JamMulai != $obj->JamMulai) ||
+                        ($row_before->JamSelesai != $obj->JamSelesai) ||
+                        ($row_before->RuangID != $obj->RuangID) ||
+                        ($row_before->Nama_Dosen != $obj->Nama_Dosen)) {
+                    $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td>';
+                }
+                    
+                $respondent_html = '<td>';
+                $respondent_html .= '{no_respondent}';
+                $respondent_html = trim($respondent_html).'</td>';
+                
+                if (strpos($obj->flag, 'NONE') !== FALSE) {
+                    $pertanyaan_html = '<td>{no_data}</td></tr>';
+                }
+                if (strpos($obj->flag, 'PERTANYAAN') !== FALSE) {
+                    $pertanyaan_html = '<td>'.$obj->nilai.'</td>';
+                    if (!$is_empty_data_layout_created) {
+                        $empty_data_layout .= '<td>&nbsp;</td>';
+                        $header_html_data .= '<th>'.++$ii.'</th>';
+                    }
+                }
+                if (strpos($obj->flag, 'TOTAL') !== FALSE) {
+                    $pertanyaan_html = '<td>'.$obj->nilai.'</td></tr>';
+                    if (!$is_empty_data_layout_created) {
+                        $empty_data_layout .= '<td>&nbsp;</td>';
+                        $html_header_last_data = '<th rowspan="2">Rata- Rata</th>';
+                        $is_empty_data_layout_created = TRUE;
+                    }
+                }
+                
+                //penambahan </tr>
+                if (strpos($obj->flag, '{no_data}') !== FALSE) {
+                    $html_data .= $pertanyaan_html.'</tr>';
+                } else {
+                    $html_data .= $pertanyaan_html;
+                }
+                
+                $row_before = $obj;
+                $idx++;
+            }
+            /*foreach ($list_data as $obj) {
+                if (is_object($row_before)) {
+                    if (!property_exists($row_before,'TahunID')) {
+                        $html_data .= '<tr><td></td><td{colspan_1}><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
+                    } else if ($row_before->TahunID != $obj->TahunID) {
+                        $html_data .= '<tr><td></td><td{colspan_1}><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
+                    }
+                }
+                $html_data .= '<tr>';
+                //$html_data .= '<td>'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'<sup>'.$obj->DosenID.'</sup></td>';
+                $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td>';
+                
+                //$arr_jadwal_id = $this->mLaporan->edom_0_get_jadwal_id_per_jadwal($obj);
+                //print_r('<p>'.++$oo.'</p><br/>');
+                //print_r($arr_jadwal_id);
+                
+                //$respondent_data_per_jadwal = $this->mLaporan->edom_0_get_respondent_data_per_jadwal($arr_jadwal_id);
+                                
+                $respondent_html = '<td>';
+                if ($respondent_data_per_jadwal != FALSE) { 
+                    foreach ($respondent_data_per_jadwal as $obj3) {
+                        $respondent_html .= $obj3->respondent.'<sup>'.$obj3->respon_ke.'</sup> ';
+                    }
+                } else {
+                    $respondent_html .= '{no_respondent}';
+                //}
+                $respondent_html = trim($respondent_html).'</td>';
+                //$html_data .= $respondent_html;
+                $calc_data_each_pilihan_per_jadwal = $this->mLaporan->edom_0_get_calc_data_each_pilihan_per_jadwal($arr_jadwal_id);
+                
+                if ($calc_data_each_pilihan_per_jadwal != FALSE) { 
+                    foreach ($calc_data_each_pilihan_per_jadwal as $obj2) {
+                        $html_data .= '<td align="center">'.$obj2->nilai.'</td>';
+                        if (!$is_empty_data_layout_created) {
+                            $empty_data_layout .= '<td>&nbsp;</td>';
+                            if ($obj2->id != 'TOTAL') {
+                                $header_html_data .= '<th>'.++$ii.'</th>';
+                                $html_data_footer = '<th rowspan="2">Rata- Rata</th>';
+                            }
+                        }
+                    }
+                    if ($empty_data_layout != '') {
+                        $is_empty_data_layout_created = TRUE;
+                    }
+                } else {
+                    $html_data .= '<td>{no_data}</td>';
+                }
+                
+                $html_data .= $respondent_html;
+                $html_data .= '</tr>';
+                
+                $row_before = $obj;
+            }*/
+            $html_data .= '</table>';
+            
+            $empty_data_layout = substr(substr($empty_data_layout, 4), 0, -5);
+            $html_data = str_replace('{no_data}', $empty_data_layout, $html_data);
+            
+            $html_header = '<tr><th rowspan="2">No</th><th rowspan="2">Mata Kuliah</th><th colspan="3">Jadwal</th><th rowspan="2">Nama Dosen</th><th colspan="'.$ii.'">Pertanyaan</th>'.$html_header_last_data.'<th rowspan="2">Keterangan</th></tr><tr><th>Hari</th><th>Jam</th><th>Kelas</th>'.$header_html_data.'</tr>';
+            $html_data = str_replace('{table_header}', $html_header, $html_data);
+            
+            print_r($html_data);
+            exit();
+            
             
             //print_r(html_escape($empty_data_layout));
             

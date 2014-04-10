@@ -23,7 +23,75 @@ class MLaporan extends CI_Model {
     }
     
     function edom_0_process_rata2($arr_tahun = NULL) {
-        
+        $tbl_laporan = 'edom_0_laporan';
+        $edom_0_obj_jadwal = $this->edom_0_get_list_jadwal($arr_tahun);
+        $db_dflt = $this->load->database('default', TRUE);
+        $db_dflt->trans_start();
+        $in_tahun = "IN (";
+        if ($arr_tahun == NULL) {
+            return FALSE;
+        } else {
+            foreach ($arr_tahun as $value) {
+                $in_tahun .= $value.',';
+            }
+            $in_tahun = substr($in_tahun, 0, (strlen($in_tahun)-1));
+        }
+        $in_tahun .= ")";
+        $sql = "UPDATE ".$tbl_laporan." l
+            SET l.modified_at = NOW()
+            WHERE l.TahunID ".$in_tahun;
+        $db_dflt->query($sql);
+        foreach ($edom_0_obj_jadwal as $obj) {
+            //a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.DosenID, a.order_no, h.nama AS Hari, d.Nama AS Nama_Dosen
+            $obj_jadwal_id = $this->edom_0_get_jadwal_id_per_jadwal($obj);
+            //print_r('<br/>jadwal_id-----<br/>');
+            //print_r($obj_jadwal_id);
+            $obj_calc_data = $this->edom_0_get_calc_data_each_pilihan_per_jadwal($obj_jadwal_id);
+            //print_r('<br/>calc_data-----<br/>');
+            //print_r($obj_calc_data);
+            //print_r('<br/>');
+            $arr_obj_to_save = $obj;
+            if ($obj_calc_data) {
+                foreach ($obj_calc_data as $obj2) {
+                    $arr_obj_to_save->flag = $obj2->id;
+                    $arr_obj_to_save->flag_no = $obj2->flag_no;
+                    $arr_obj_to_save->nilai = $obj2->nilai;
+                    $db_dflt->insert($tbl_laporan, $arr_obj_to_save);
+                }
+            } else {
+                $arr_obj_to_save->flag = 'NONE';
+                $arr_obj_to_save->flag_no = 0;
+                $arr_obj_to_save->nilai = 0;
+                $db_dflt->insert($tbl_laporan, $arr_obj_to_save);
+            }
+        }
+        $db_dflt->trans_complete();
+        $db_dflt->close();
+    }
+    
+    function edom_0_get_processed_data($arr_tahun = NULL) {
+        $in_tahun = "IN (";
+        if ($arr_tahun == NULL) {
+            return FALSE;
+        } else {
+            foreach ($arr_tahun as $value) {
+                $in_tahun .= $value.',';
+            }
+            $in_tahun = substr($in_tahun, 0, (strlen($in_tahun)-1));
+        }
+        $in_tahun .= ")";
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.DosenID, a.order_no, a.Hari, a.Nama_Dosen, a.flag, a.flag_no, a.nilai
+            FROM edom_0_laporan a
+            WHERE a.modified_at IS NULL
+            AND a.TahunID ".$in_tahun."
+            ORDER BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.order_no, a.DosenID, a.flag, a.flag_no";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
     }
     
     function edom_0_get_list_jadwal($arr_tahun = NULL) {
@@ -215,9 +283,9 @@ class MLaporan extends CI_Model {
         $in_jadwal_id .= ")";
         
         $db_dflt = $this->load->database('default', TRUE);
-        $sql = "SELECT vvv.id, vvv.nilai FROM (
+        $sql = "SELECT 'PERTANYAAN' AS id, vvv.id AS flag_no, vvv.nilai FROM (
             SELECT vv.id_pertanyaan AS id, ROUND(AVG(p.nilai),2) AS nilai
-            FROM jawaban_edom_20131 vv
+            FROM edom_20131_j vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
             WHERE SPLIT_STRING(vv.custom_data,'&&',1) = '".$tahun_id."'
             AND SPLIT_STRING(vv.custom_data,'&&',5) ".$in_jadwal_id."
@@ -227,8 +295,8 @@ class MLaporan extends CI_Model {
             GROUP BY vv.id_pertanyaan
             ORDER BY vv.id_pertanyaan ) vvv
             UNION
-            SELECT 'FOOTER' AS id, ROUND(AVG(p.nilai),2) AS nilai
-            FROM jawaban_edom_20131 vv
+            SELECT 'TOTAL' AS id, 0 AS flag_no, ROUND(AVG(p.nilai),2) AS nilai
+            FROM edom_20131_j vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
             WHERE SPLIT_STRING(vv.custom_data,'&&',1) = '".$tahun_id."'
             AND SPLIT_STRING(vv.custom_data,'&&',5) ".$in_jadwal_id."
@@ -236,6 +304,16 @@ class MLaporan extends CI_Model {
             AND SPLIT_STRING(vv.custom_data,'&&',6) = '".$dosen_id."'
             AND vv.jawaban_isian IS NULL";
         $query = $db_dflt->query($sql);
+        
+        $sql2 = "UPDATE edom_20131_j vv
+            SET vv.processed = 1
+            WHERE SPLIT_STRING(vv.custom_data,'&&',1) = '".$tahun_id."'
+            AND SPLIT_STRING(vv.custom_data,'&&',5) ".$in_jadwal_id."
+            AND SPLIT_STRING(vv.custom_data,'&&',3) = '".$kode_id."'
+            AND SPLIT_STRING(vv.custom_data,'&&',6) = '".$dosen_id."'
+            AND vv.jawaban_isian IS NULL";
+        $query2 = $db_dflt->query($sql2);
+        
         $db_dflt->close();
         if ($query->num_rows() > 1) {
             //print_r($query->result());
@@ -282,11 +360,11 @@ class MLaporan extends CI_Model {
         $sql = "SELECT vvv.respon_ke, COUNT(vvv.respondent_id) AS respondent
             FROM (
             SELECT vv.respon_ke, vv.respondent_id
-            FROM jawaban_header_edom vv
-            WHERE vv.TahunID = '".$tahun_id."'
-            AND vv.JadwalID ".$in_jadwal_id."
-            AND vv.KodeID = '".$kode_id."'
-            AND vv.DosenID = '".$dosen_id."'
+            FROM edom_20131_jh vv
+            WHERE SPLIT_STRING(vv.custom_data,'&&',1) = '".$tahun_id."'
+            AND SPLIT_STRING(vv.custom_data,'&&',5) ".$in_jadwal_id."
+            AND SPLIT_STRING(vv.custom_data,'&&',3) = '".$kode_id."'
+            AND SPLIT_STRING(vv.custom_data,'&&',6) = '".$dosen_id."'
             GROUP BY vv.respon_ke, vv.respondent_id ) vvv
             GROUP BY vvv.respon_ke";
         $query = $db_dflt->query($sql);
@@ -450,7 +528,7 @@ class MLaporan extends CI_Model {
             GROUP BY vv.id_pertanyaan
             ORDER BY vv.id_pertanyaan ) vvv
             UNION
-            SELECT 'FOOTER' AS id, ROUND(AVG(p.nilai),2) AS nilai, 'Rata-rata'
+            SELECT 'TOTAL' AS id, ROUND(AVG(p.nilai),2) AS nilai, 'Rata-rata'
             FROM jawaban_edom vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
             WHERE ".$where_TahunID."
