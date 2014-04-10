@@ -22,6 +22,10 @@ class MLaporan extends CI_Model {
         return FALSE;
     }
     
+    function edom_0_process_rata2($arr_tahun = NULL) {
+        
+    }
+    
     function edom_0_get_list_jadwal($arr_tahun = NULL) {
         $in_tahun = "IN (";
         if ($arr_tahun == NULL) {
@@ -213,23 +217,23 @@ class MLaporan extends CI_Model {
         $db_dflt = $this->load->database('default', TRUE);
         $sql = "SELECT vvv.id, vvv.nilai FROM (
             SELECT vv.id_pertanyaan AS id, ROUND(AVG(p.nilai),2) AS nilai
-            FROM jawaban_edom vv
+            FROM jawaban_edom_20131 vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
-            WHERE vv.TahunID = '".$tahun_id."'
-            AND vv.JadwalID ".$in_jadwal_id."
-            AND vv.KodeID = '".$kode_id."'
-            AND vv.DosenID = '".$dosen_id."'
+            WHERE SPLIT_STRING(vv.custom_data,'&&',1) = '".$tahun_id."'
+            AND SPLIT_STRING(vv.custom_data,'&&',5) ".$in_jadwal_id."
+            AND SPLIT_STRING(vv.custom_data,'&&',3) = '".$kode_id."'
+            AND SPLIT_STRING(vv.custom_data,'&&',6) = '".$dosen_id."'
             AND vv.jawaban_isian IS NULL
             GROUP BY vv.id_pertanyaan
             ORDER BY vv.id_pertanyaan ) vvv
             UNION
             SELECT 'FOOTER' AS id, ROUND(AVG(p.nilai),2) AS nilai
-            FROM jawaban_edom vv
+            FROM jawaban_edom_20131 vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
-            WHERE vv.TahunID = '".$tahun_id."'
-            AND vv.JadwalID ".$in_jadwal_id."
-            AND vv.KodeID = '".$kode_id."'
-            AND vv.DosenID = '".$dosen_id."'
+            WHERE SPLIT_STRING(vv.custom_data,'&&',1) = '".$tahun_id."'
+            AND SPLIT_STRING(vv.custom_data,'&&',5) ".$in_jadwal_id."
+            AND SPLIT_STRING(vv.custom_data,'&&',3) = '".$kode_id."'
+            AND SPLIT_STRING(vv.custom_data,'&&',6) = '".$dosen_id."'
             AND vv.jawaban_isian IS NULL";
         $query = $db_dflt->query($sql);
         $db_dflt->close();

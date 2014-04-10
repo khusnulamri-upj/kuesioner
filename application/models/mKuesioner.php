@@ -252,10 +252,14 @@ class MKuesioner extends CI_Model {
                 /*$sql_delete = "SELECT jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data, jh.custom_data2
                     FROM jawaban_header jh
                     GROUP BY jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data, jh.custom_data2";*/
+                $sql_test = "SELECT 'CHECK' FROM ".$row->tabel_jawaban_header." LIMIT 1";
+                $query_test = $db_delete->query($sql_test);
+                if (empty($query_test)) {
+                    exit('Check Your Config. @Prd15');
+                }
                 $sql_delete = "SELECT jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data, jh.custom_data2
                     FROM ".$row->tabel_jawaban_header." jh
                     GROUP BY jh.id_periode, jh.id_kuesioner, jh.respondent_id, jh.custom_data, jh.custom_data2";
-                
                 $qry_delete = $db_delete->query($sql_delete);
                 $db_delete->close();
                 foreach ($arr_obj_return as $obj_ori) {
@@ -409,6 +413,11 @@ class MKuesioner extends CI_Model {
         $obj_periode = $this->get_periode_data($id_periode);
         
         $db_dflt = $this->load->database('default', TRUE);
+        $sql_test = "SELECT 'CHECK' FROM ".$obj_periode->tabel_jawaban." LIMIT 1";
+        $query_test = $db_dflt->query($sql_test);
+        if (empty($query_test)) {
+            exit('Check Your Config. @Prd14');
+        }
         $sql = "SELECT IF(MAX(respon_ke) IS NULL,0,MAX(respon_ke))+1 AS next_respon_ke "
                 . "FROM ".$obj_periode->tabel_jawaban." "
                 . "WHERE custom_data = '".$custom_data."' "
@@ -444,8 +453,18 @@ class MKuesioner extends CI_Model {
             $data_header['custom_data3'] = $custom_data3;
         }
         //$db_dflt->insert('jawaban_header', $data_header);
+        $sql_test = "SELECT 'CHECK' FROM ".$obj_periode->tabel_jawaban_header." LIMIT 1";
+        $query_test = $db_dflt->query($sql_test);
+        if (empty($query_test)) {
+            exit('Check Your Config. @Prd15');
+        }
         $db_dflt->insert($obj_periode->tabel_jawaban_header, $data_header);
         
+        $sql_test = "SELECT 'CHECK' FROM ".$obj_periode->tabel_jawaban." LIMIT 1";
+        $query_test = $db_dflt->query($sql_test);
+        if (empty($query_test)) {
+            exit('Check Your Config. @Prd14');
+        }
         foreach ($arr_jawaban as $key => $value) {
             $is_isian_kosong = FALSE;
             $data_mysql = array(
