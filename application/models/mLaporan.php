@@ -26,9 +26,8 @@ class MLaporan extends CI_Model {
         $tbl_laporan = 'edom_0_laporan';
         $edom_0_obj_jadwal = $this->edom_0_get_list_jadwal($arr_tahun);
         $db_dflt = $this->load->database('default', TRUE);
-        $db_dflt->trans_start();
         $in_tahun = "IN (";
-        if ($arr_tahun == NULL) {
+        if (($arr_tahun == NULL) || ($edom_0_obj_jadwal == FALSE)) {
             return FALSE;
         } else {
             foreach ($arr_tahun as $value) {
@@ -37,6 +36,7 @@ class MLaporan extends CI_Model {
             $in_tahun = substr($in_tahun, 0, (strlen($in_tahun)-1));
         }
         $in_tahun .= ")";
+        $db_dflt->trans_start();
         $sql = "UPDATE ".$tbl_laporan." l
             SET l.modified_at = NOW()
             WHERE l.TahunID ".$in_tahun;

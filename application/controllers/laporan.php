@@ -12,8 +12,49 @@ class Laporan extends CI_Controller {
     
     public function index() {
         $this->session->sess_destroy();
+    }
+    
+    public function edom_0_process() {
         $this->load->model('mLaporan');
-        $this->mLaporan->edom_0_process_rata2(array('20131'));
+        
+        if ($this->input->post('submit') == 'Lihat') {
+            $newdata = array(
+                'edom_0_process_tahun' => $this->input->post('edom_0_process_tahun')
+            );
+            $this->session->set_userdata($newdata);
+            //print_r($this->session->userdata('tahun'));
+            redirect(current_url(), 'location');
+        }
+        print_r($this->session->all_userdata());
+        $sess_tahun = $this->session->userdata('edom_0_process_tahun');
+        
+        if (isset($sess_tahun)) {
+            $result = $this->mLaporan->edom_0_process_rata2($sess_tahun);
+            print_r($result.'<br/>');
+            print_r($sess_tahun);
+            $this->session->unset_userdata('edom_0_process_tahun');
+        }
+        
+        $list_tahun = $this->mLaporan->edom_0_get_tahun();
+        $data['html'] = '<form method="POST" action="'.site_url('laporan/edom_0_process').'">';
+        $data['html'] .= '<table><tr>';
+        $data['html'] .= '<td>Tahun : </td><td><select name="edom_0_process_tahun[]" multiple="multiple">';
+        foreach ($list_tahun as $obj) {
+            $selected = '';
+            if (is_array($sess_tahun)) {
+                if (in_array($obj->tahun, $sess_tahun) ) {
+                    $selected = ' selected="selected"';
+                }
+            }
+            $data['html'] .= '<option value="'.$obj->tahun.'"'.$selected.'>'.$obj->deskripsi.'</option>';
+        }
+        $data['html'] .= '</select></td>';
+        
+        $data['html'] .= '</tr></table>';
+        $data['html'] .= '<input name="submit" type="submit" value="Lihat">';
+        $data['html'] .= '</form>';
+        
+        $this->load->view('laporan/laporan',$data);
     }
     
     /*public function edom_0() {
@@ -247,14 +288,14 @@ class Laporan extends CI_Controller {
                     $pertanyaan_html = '<td>{no_data}</td></tr>';
                 }
                 if (strpos($obj->flag, 'PERTANYAAN') !== FALSE) {
-                    $pertanyaan_html = '<td>'.$obj->nilai.'</td>';
+                    $pertanyaan_html = '<td align="center">'.$obj->nilai.'</td>';
                     if (!$is_empty_data_layout_created) {
                         $empty_data_layout .= '<td>&nbsp;</td>';
-                        $header_html_data .= '<th>'.++$ii.'</th>';
+                        $header_html_data .= '<th align="center">'.++$ii.'</th>';
                     }
                 }
                 if (strpos($obj->flag, 'TOTAL') !== FALSE) {
-                    $pertanyaan_html = '<td>'.$obj->nilai.'</td></tr>';
+                    $pertanyaan_html = '<td align="center">'.$obj->nilai.'</td></tr>';
                     if (!$is_empty_data_layout_created) {
                         $empty_data_layout .= '<td>&nbsp;</td>';
                         $html_header_last_data = '<th rowspan="2">Rata- Rata</th>';
@@ -333,7 +374,11 @@ class Laporan extends CI_Controller {
             $html_header = '<tr><th rowspan="2">No</th><th rowspan="2">Mata Kuliah</th><th colspan="3">Jadwal</th><th rowspan="2">Nama Dosen</th><th colspan="'.$ii.'">Pertanyaan</th>'.$html_header_last_data.'<th rowspan="2">Keterangan</th></tr><tr><th>Hari</th><th>Jam</th><th>Kelas</th>'.$header_html_data.'</tr>';
             $html_data = str_replace('{table_header}', $html_header, $html_data);
             
-            print_r($html_data);
+            $html_data = str_replace('{colspan_1}', ' colspan="'.(5+$ii+2).'"', $html_data);
+            
+            $data['html'] .= $html_data;
+            
+            print_r($data['html']);
             exit();
             
             
