@@ -56,6 +56,7 @@ class MLaporan extends CI_Model {
                     $arr_obj_to_save->flag = $obj2->id;
                     $arr_obj_to_save->flag_no = $obj2->flag_no;
                     $arr_obj_to_save->nilai = $obj2->nilai;
+                    $arr_obj_to_save->keterangan = $obj2->keterangan;
                     $db_dflt->insert($tbl_laporan, $arr_obj_to_save);
                 }
             } else {
@@ -267,6 +268,28 @@ class MLaporan extends CI_Model {
         return FALSE;
     }
     
+    function edom_0_get_sql_case_grade($col_name = NULL,$id_grup_pilihan = NULL) {
+        $tbl_grade = 'penilaian';
+        $count_bracket = 0;
+        $sql_case = '';
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT a.min_nilai, a.max_nilai, a.deskripsi "
+                . "FROM ".$tbl_grade." a "
+                . "WHERE a.id_grup_pilihan=".$id_grup_pilihan." "
+                . "ORDER BY a.min_nilai ASC";
+        $query = $db_dflt->query($sql);
+        foreach ($query->result() AS $obj) {
+            $sql_case .= 'IF('.$col_name.'>='.$obj->min_nilai.' AND '.$col_name.'<='.$obj->max_nilai.', \''.$obj->deskripsi.'\',';
+            $count_bracket++;
+        }
+        $sql_case .= '\'None\'';
+        for ($index = 0; $index < $count_bracket; $index++) {
+            $sql_case .= ')';
+        }
+        //print_r($sql_case);
+        return $sql_case;
+    }
+    
     function edom_0_get_calc_data_each_pilihan_per_jadwal($obj_jadwal = NULL) {
         $in_jadwal_id = "IN (";
         if ($obj_jadwal == NULL) {
@@ -282,8 +305,16 @@ class MLaporan extends CI_Model {
         }
         $in_jadwal_id .= ")";
         
+        $sql_grade = ', ';
+        $sql_grade .= $this->edom_0_get_sql_case_grade('vvv.nilai',1);
+        $sql_grade .= ' AS keterangan ';
+        
+        $sql_grade2 = ', ';
+        $sql_grade2 .= $this->edom_0_get_sql_case_grade('ROUND(AVG(p.nilai),2)',1);
+        $sql_grade2 .= ' AS keterangan ';
+        
         $db_dflt = $this->load->database('default', TRUE);
-        $sql = "SELECT 'PERTANYAAN' AS id, vvv.id AS flag_no, vvv.nilai FROM (
+        $sql = "SELECT 'PERTANYAAN' AS id, vvv.id AS flag_no, vvv.nilai".$sql_grade." FROM (
             SELECT vv.id_pertanyaan AS id, ROUND(AVG(p.nilai),2) AS nilai
             FROM edom_20131_j vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
@@ -295,7 +326,7 @@ class MLaporan extends CI_Model {
             GROUP BY vv.id_pertanyaan
             ORDER BY vv.id_pertanyaan ) vvv
             UNION
-            SELECT 'TOTAL' AS id, 0 AS flag_no, ROUND(AVG(p.nilai),2) AS nilai
+            SELECT 'TOTAL' AS id, 0 AS flag_no, ROUND(AVG(p.nilai),2) AS nilai".$sql_grade2."
             FROM edom_20131_j vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
             WHERE SPLIT_STRING(vv.custom_data,'&&',1) = '".$tahun_id."'

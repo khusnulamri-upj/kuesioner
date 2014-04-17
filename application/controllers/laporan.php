@@ -12,6 +12,8 @@ class Laporan extends CI_Controller {
     
     public function index() {
         $this->session->sess_destroy();
+        $this->load->model('mLaporan');
+        //$this->mLaporan->edom_0_get_sql_case_grade('jawaban_pilihan',1);
     }
     
     public function edom_0_process() {
@@ -295,11 +297,16 @@ class Laporan extends CI_Controller {
                     }
                 }
                 if (strpos($obj->flag, 'TOTAL') !== FALSE) {
-                    $pertanyaan_html = '<td align="center">'.$obj->nilai.'</td></tr>';
+                    $pertanyaan_html = '<td align="center">'.$obj->nilai.'</td>{keterangan}</tr>';
                     if (!$is_empty_data_layout_created) {
                         $empty_data_layout .= '<td>&nbsp;</td>';
                         $html_header_last_data = '<th rowspan="2">Rata- Rata</th>';
                         $is_empty_data_layout_created = TRUE;
+                    }
+                    if (isset($obj->keterangan)) {
+                        $pertanyaan_html = str_replace('{keterangan}', '<td>'.$obj->keterangan.'</td>', $pertanyaan_html);
+                    } else {
+                        $pertanyaan_html = str_replace('{keterangan}', '<td>&nbsp;</td>', $pertanyaan_html);
                     }
                 }
                 
