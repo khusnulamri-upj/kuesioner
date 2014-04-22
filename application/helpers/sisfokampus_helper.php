@@ -69,6 +69,20 @@ if (!function_exists('sisfo_is_dosen')) {
 if (!function_exists('sisfo_is_uts_or_uas')) {
 
     function sisfo_is_uts_or_uas() {
+        $CI =& get_instance();
+        
+        $db_dflt = $CI->load->database('sisfo', TRUE);
+        $sql = "SELECT MAX( t.TglUTSSelesai ) AS TglUTSSelesai, NOW( ) AS TglSekarang, IF( DATE_ADD( MAX( t.TglUTSSelesai ) , INTERVAL 1 DAY ) <= NOW( ) , 'UAS', 'UTS' ) AS periode
+            FROM tahun t
+            WHERE t.NA = 'N'";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() == 1) {
+            $row = $query->row();
+            return $row->periode;
+        }
+        return FALSE;
+        /*
         $hostname = 'localhost';
         $username = 'root';
         $password = 'Upeje2013';
@@ -96,6 +110,7 @@ if (!function_exists('sisfo_is_uts_or_uas')) {
         }
 
         return $return;
+        */
     }
     
 }

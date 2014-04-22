@@ -42,11 +42,16 @@ class Kuesioner extends CI_Controller {
     }
     
     public function edom($just_for_check = NULL) {
+        $newdata = array(
+            'kuesioner_home' => '/edom',
+            'kuesioner_thank_you' => 'EDOM'
+        );
+        $this->session->set_userdata($newdata);
         //print_r($_SESSION);
         $is_exist = 'FALSE';
-        $this->load->model('mKuesioner');
+        $this->load->model('mkuesioner');
         //$list_kuesioner = $this->mKuesioner->list_active_kuesioner();
-        $list_kuesioner = $this->mKuesioner->edom_list_active_kuesioner();
+        $list_kuesioner = $this->mkuesioner->edom_list_active_kuesioner();
         //print_r($list_kuesioner);
         if (empty($list_kuesioner)) {
             if ($just_for_check == 'is_exist') {
@@ -144,8 +149,8 @@ class Kuesioner extends CI_Controller {
         $arr_dec = explode('/', $dec_from_lists);
         $id_periode = $arr_dec[0];
         $id_kuesioner = $arr_dec[1];
-        $this->load->model('mKuesioner');
-        $kuesioner_data = $this->mKuesioner->get_kuesioner_data($id_kuesioner,$id_periode);
+        $this->load->model('mkuesioner');
+        $kuesioner_data = $this->mkuesioner->get_kuesioner_data($id_kuesioner,$id_periode);
         //print_r($kuesioner_data);
         $str_respondent_id = $kuesioner_data->respondent_id;
         $is_function = strpos($str_respondent_id, '()');
@@ -155,7 +160,7 @@ class Kuesioner extends CI_Controller {
             $str_respondent_id = str_replace('()', '', $str_respondent_id);
             $respondent_id = $str_respondent_id();
         }
-        if ((empty($enc_from_lists)) || (empty($id_periode)) || (!$this->mKuesioner->is_id_kuesioner_exist($id_kuesioner)) || (empty($respondent_id))) {
+        if ((empty($enc_from_lists)) || (empty($id_periode)) || (!$this->mkuesioner->is_id_kuesioner_exist($id_kuesioner)) || (empty($respondent_id))) {
             redirect(site_url('kuesioner/lists'));
         }
         
@@ -278,7 +283,7 @@ class Kuesioner extends CI_Controller {
             $config_kuesioner[$arr_temp[0]] = $arr_temp[1];
         }
         
-        $list_pertanyaan = $this->mKuesioner->get_form($id_kuesioner);
+        $list_pertanyaan = $this->mkuesioner->get_form($id_kuesioner);
         $index = 0;
         $for_colspan = 1;
         foreach($list_pertanyaan as $obj) {
@@ -300,7 +305,7 @@ class Kuesioner extends CI_Controller {
                     $enc_id_pertanyaan = $this->encrypt->encode('pilihantanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
                     $html_radio = '';
                     //AMRNEEDTOIMPROVE : value=$i ?? >>> id_pilihan
-                    $arr_val = $this->mKuesioner->get_all_value_pilihan($obj->id_grup_pilihan);
+                    $arr_val = $this->mkuesioner->get_all_value_pilihan($obj->id_grup_pilihan);
                     //print_r($arr_val);
                     for ($i = 1; $i <= $obj->jml_pilihan; $i++) {
                         $cause_config = '';
@@ -312,7 +317,7 @@ class Kuesioner extends CI_Controller {
                         $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val[($i-1)]->id_pilihan).'"'.$cause_config.'></td>';
                     }
                     if (!empty($obj->jml_pilihan2)) {
-                        $arr_val2 = $this->mKuesioner->get_all_value_pilihan($obj->id_grup_pilihan2);
+                        $arr_val2 = $this->mkuesioner->get_all_value_pilihan($obj->id_grup_pilihan2);
                         //print_r($arr_val2);
                         $enc_id_pertanyaan = $this->encrypt->encode('pilihan2tanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
                         //$html_radio .= '</td><td>&nbsp;</td><td>';
@@ -342,7 +347,7 @@ class Kuesioner extends CI_Controller {
     }
     
     public function finish() {
-        $this->load->model('mKuesioner');
+        $this->load->model('mkuesioner');
         $arr_jawaban = array();
         $id_periode = NULL;
         $id_kuesioner = NULL;
@@ -430,7 +435,7 @@ class Kuesioner extends CI_Controller {
             //print_r($index);
         }
         
-        $is_pass = $this->mKuesioner->get_array_jawaban_checker($id_kuesioner);
+        $is_pass = $this->mkuesioner->get_array_jawaban_checker($id_kuesioner);
         foreach ($arr_jawaban as $key => $val) {
             if ($val->tipe == 'isian') {
                 if (($val->jawaban != '') && (isset($val->jawaban))) {
@@ -441,8 +446,13 @@ class Kuesioner extends CI_Controller {
             }
         }
         if (count($is_pass) > 0) {
+            if (!empty($this->session->userdata('kuesioner_thank_you'))) {
+                $nama_kuesioner = $this->session->userdata('kuesioner_thank_you');
+            } else {
+                $nama_kuesioner = 'kuesioner';
+            }
             $data['html'] = '<table>';
-            $data['html'] .= '<tr><td>Harap mengisi kuesioner dengan benar.</td></tr>';
+            $data['html'] .= '<tr><td>Harap mengisi '.$nama_kuesioner.' dengan benar.</td></tr>';
             $data['html'] .= '<tr class="centered"><td><a class="button boxed" href="'.site_url('/kuesioner/start/'.$previous_url_data).'">Kembali</a></td></tr>';
             $data['html'] .= '</table>';
             $this->load->view('kuesioner/message_kuesioner',$data);
@@ -455,7 +465,7 @@ class Kuesioner extends CI_Controller {
                 $_CODE_SET_edom_timing = 'UTS';
             }
             //AMRNOTE-- END : for assign _CODE_SET_
-            $temp_data = $this->mKuesioner->get_periode_data($id_periode);
+            $temp_data = $this->mkuesioner->get_periode_data($id_periode);
             $str_to_save3 = $custom_data3;
             //replace _CODE_SET_
             $arr_field_save3 = explode($temp_data->separator, $str_to_save3);
@@ -475,23 +485,28 @@ class Kuesioner extends CI_Controller {
             }
             $custom_data3 = $str_to_save3;
             
-            $this->mKuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data,$custom_data2,$custom_data3);
+            $this->mkuesioner->insert_jawaban($id_periode,$id_kuesioner,$respondent_id,$arr_jawaban,$custom_data,$custom_data2,$custom_data3);
             //print_r($id_periode);
             //print_r($id_kuesioner);
             //print_r($respondent_id);
             //print_r($arr_jawaban);
             //redirect(site_url('/kuesioner'));
+            if (!empty($this->session->userdata('kuesioner_thank_you'))) {
+                $nama_kuesioner = $this->session->userdata('kuesioner_thank_you');
+            } else {
+                $nama_kuesioner = 'kuesioner';
+            }
             $data['html'] = '<table>';
-            $data['html'] .= '<tr><td>Terima kasih telah mengisi kuesioner ini.</td></tr>';
-            $data['html'] .= '<tr class="centered"><td><a class="button boxed" href="'.site_url('/kuesioner').'">Lanjut</a></td></tr>';
+            $data['html'] .= '<tr><td>Terima kasih telah mengisi '.$nama_kuesioner.' ini.</td></tr>';
+            $data['html'] .= '<tr class="centered"><td><a class="button boxed" href="'.site_url('/kuesioner').$this->session->userdata('kuesioner_home').'">Lanjut</a></td></tr>';
             $data['html'] .= '</table>';
             $this->load->view('kuesioner/message_kuesioner',$data);
         }
     }
     
     public function sync_jawaban_to_jawaban_header($id_periode = NULL) {
-        $this->load->model('mKuesioner');
-        echo '#Affected Rows : '.$this->mKuesioner->sync_jawaban_to_jawaban_header($id_periode);
+        $this->load->model('mkuesioner');
+        echo '#Affected Rows : '.$this->mkuesioner->sync_jawaban_to_jawaban_header($id_periode);
     }
 }
 

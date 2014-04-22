@@ -12,12 +12,12 @@ class Laporan extends CI_Controller {
     
     public function index() {
         $this->session->sess_destroy();
-        $this->load->model('mLaporan');
+        $this->load->model('mlaporan');
         //$this->mLaporan->edom_0_get_sql_case_grade('jawaban_pilihan',1);
     }
     
     public function edom_0_process() {
-        $this->load->model('mLaporan');
+        $this->load->model('mlaporan');
         
         if ($this->input->post('submit') == 'Lihat') {
             $newdata = array(
@@ -31,13 +31,13 @@ class Laporan extends CI_Controller {
         $sess_tahun = $this->session->userdata('edom_0_process_tahun');
         
         if (isset($sess_tahun)) {
-            $result = $this->mLaporan->edom_0_process_rata2($sess_tahun);
+            $result = $this->mlaporan->edom_0_process_rata2($sess_tahun);
             print_r($result.'<br/>');
             print_r($sess_tahun);
             $this->session->unset_userdata('edom_0_process_tahun');
         }
         
-        $list_tahun = $this->mLaporan->edom_0_get_tahun();
+        $list_tahun = $this->mlaporan->edom_0_get_tahun();
         $data['html'] = '<form method="POST" action="'.site_url('laporan/edom_0_process').'">';
         $data['html'] .= '<table><tr>';
         $data['html'] .= '<td>Tahun : </td><td><select name="edom_0_process_tahun[]" multiple="multiple">';
@@ -201,7 +201,7 @@ class Laporan extends CI_Controller {
                 border: 1px solid black;
             }
             </style>';
-        $this->load->model('mLaporan');
+        $this->load->model('mlaporan');
         
         if ($this->input->post('submit') == 'Lihat') {
             $newdata = array(
@@ -214,7 +214,7 @@ class Laporan extends CI_Controller {
         print_r($this->session->all_userdata());
         $sess_tahun = $this->session->userdata('edom_0_tahun');
         
-        $list_tahun = $this->mLaporan->edom_0_get_tahun();
+        $list_tahun = $this->mlaporan->edom_0_get_tahun();
         $data['html'] = $html_css.'<form method="POST" action="'.site_url('laporan/edom_0').'">';
         $data['html'] .= '<table><tr>';
         $data['html'] .= '<td>Tahun : </td><td><select name="edom_0_tahun[]" multiple="multiple">';
@@ -234,7 +234,7 @@ class Laporan extends CI_Controller {
         $data['html'] .= '</form>';
         //echo $data['html'];
         
-        $list_data = $this->mLaporan->edom_0_get_processed_data($sess_tahun);
+        $list_data = $this->mlaporan->edom_0_get_processed_data($sess_tahun);
         if ($list_data != FALSE) {
             $i = 1;
             $html_data = '<table class="laporan">{table_header}';
@@ -287,7 +287,7 @@ class Laporan extends CI_Controller {
                 $respondent_html = trim($respondent_html).'</td>';
                 
                 if (strpos($obj->flag, 'NONE') !== FALSE) {
-                    $pertanyaan_html = '<td>{no_data}</td></tr>';
+                    $pertanyaan_html = '<td>{no_data}</td><td>&nbsp;</td></tr>';
                 }
                 if (strpos($obj->flag, 'PERTANYAAN') !== FALSE) {
                     $pertanyaan_html = '<td align="center">'.$obj->nilai.'</td>';
@@ -303,6 +303,8 @@ class Laporan extends CI_Controller {
                         $html_header_last_data = '<th rowspan="2">Rata- Rata</th>';
                         $is_empty_data_layout_created = TRUE;
                     }
+                    //print_r($pertanyaan_html);
+                    //print_r($obj->keterangan);
                     if (isset($obj->keterangan)) {
                         $pertanyaan_html = str_replace('{keterangan}', '<td>'.$obj->keterangan.'</td>', $pertanyaan_html);
                     } else {
@@ -385,13 +387,13 @@ class Laporan extends CI_Controller {
             
             $data['html'] .= $html_data;
             
-            print_r($data['html']);
-            exit();
+            //print_r($data['html']);
+            //exit();
             
             
             //print_r(html_escape($empty_data_layout));
             
-            $html_data = str_replace('{no_data}', $empty_data_layout, $html_data);
+            /*$html_data = str_replace('{no_data}', $empty_data_layout, $html_data);
             $html_data = str_replace('{no_respondent}', '&nbsp;', $html_data);
             
             if ($header_html_data == '') {
@@ -404,7 +406,7 @@ class Laporan extends CI_Controller {
             $html_data = str_replace('{colspan_1}', ' colspan="'.(5+$ii+2).'"', $html_data); 
             
             //echo $html_data;
-            $data['html'] .= $html_data;
+            $data['html'] .= $html_data;*/
         }
         $this->load->view('laporan/laporan',$data);
     }
@@ -447,8 +449,8 @@ class Laporan extends CI_Controller {
             $full_parameter = TRUE;
         }
         print_r($this->session->all_userdata());
-        $this->load->model('mLaporan');
-        $list_tahun = $this->mLaporan->edom_0_get_tahun();
+        $this->load->model('mlaporan');
+        $list_tahun = $this->mlaporan->edom_0_get_tahun();
         $data['html'] = $html_css.'<form method="POST" action="'.site_url('laporan/edom_1').'">';
         $data['html'] .= '<table><tr>';
         $data['html'] .= '<td>Tahun : </td><td><select name="edom_1_tahun[]" multiple="multiple">';
@@ -465,7 +467,7 @@ class Laporan extends CI_Controller {
         $data['html'] .= '</select></td>';
         
         $select_dosen = '<td>Dosen : </td><td><select name="edom_1_dosen">';
-        $list_dosen = $this->mLaporan->edom_1_get_dosen_by_tahun($this->session->userdata('edom_1_tahun'));
+        $list_dosen = $this->mlaporan->edom_1_get_dosen_by_tahun($this->session->userdata('edom_1_tahun'));
         if ($list_dosen != FALSE) {
             foreach ($list_dosen as $obj) {
                 $selected = '';
@@ -488,7 +490,7 @@ class Laporan extends CI_Controller {
         $data['html'] .= $select_dosen;
         
         $select_mk = '<td>Mata Kuliah : </td><td><select name="edom_1_mk">';
-        $list_mk = $this->mLaporan->edom_1_get_mk_by_tahun_and_dosen($this->session->userdata('edom_1_tahun'), $this->session->userdata('edom_1_dosen'));
+        $list_mk = $this->mlaporan->edom_1_get_mk_by_tahun_and_dosen($this->session->userdata('edom_1_tahun'), $this->session->userdata('edom_1_dosen'));
         if ($list_mk != FALSE) {
             foreach ($list_mk as $obj) {
                 $selected = '';
@@ -535,7 +537,7 @@ class Laporan extends CI_Controller {
             $mkname = '';
         }
         $select_jadwal = '<td>Jadwal : </td><td><select name="edom_1_jadwal[]" multiple="multiple">';
-        $list_jadwal = $this->mLaporan->edom_1_get_jadwal_by_tahun_and_dosen_and_mk($this->session->userdata('edom_1_tahun'), $this->session->userdata('edom_1_dosen'), $mkkode, $mkname);
+        $list_jadwal = $this->mlaporan->edom_1_get_jadwal_by_tahun_and_dosen_and_mk($this->session->userdata('edom_1_tahun'), $this->session->userdata('edom_1_dosen'), $mkkode, $mkname);
         if ($list_jadwal != FALSE) {
             foreach ($list_jadwal as $obj) {
                 $selected = '';
@@ -577,11 +579,11 @@ class Laporan extends CI_Controller {
                     $arr_jadwal_all[] = $obj;
                 }
                 
-                $list_respondent = $this->mLaporan->edom_1_get_respondent_data($this->session->userdata('edom_1_tahun'),
+                $list_respondent = $this->mlaporan->edom_1_get_respondent_data($this->session->userdata('edom_1_tahun'),
                     $this->session->userdata('edom_1_dosen'), $mkkode, $mkname, $arr_jadwal_all);
-                $list_data = $this->mLaporan->edom_1_get_calc_data_each_pilihan($this->session->userdata('edom_1_tahun'),
+                $list_data = $this->mlaporan->edom_1_get_calc_data_each_pilihan($this->session->userdata('edom_1_tahun'),
                     $this->session->userdata('edom_1_dosen'), $mkkode, $mkname, $arr_jadwal_all);
-                $list_data2 = $this->mLaporan->edom_1_get_isian_data_each_pertanyaan($this->session->userdata('edom_1_tahun'),
+                $list_data2 = $this->mlaporan->edom_1_get_isian_data_each_pertanyaan($this->session->userdata('edom_1_tahun'),
                     $this->session->userdata('edom_1_dosen'), $mkkode, $mkname, $arr_jadwal_all);
             }
             
