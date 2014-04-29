@@ -55,7 +55,7 @@ class Kuesioner extends CI_Controller {
         //print_r($list_kuesioner);
         if (empty($list_kuesioner)) {
             if ($just_for_check == 'is_exist') {
-                echo $is_exist;
+                echo 'EDOM : '.$is_exist;
             }
             exit();
             //redirect($this->config->item('kuesioner_app_base'));
@@ -138,7 +138,8 @@ class Kuesioner extends CI_Controller {
         if ($just_for_check == 'is_exist') {
             //$data['html_form'] = $is_exist;
             //$this->load->view('kuesioner/list_kuesioner',$data);
-            print_r('EDOM : '.$is_exist);
+            echo 'EDOM : '.$is_exist;
+            exit();
         } else {
             $this->load->view('kuesioner/list_kuesioner',$data);
         }
@@ -460,9 +461,9 @@ class Kuesioner extends CI_Controller {
             //AMRNOTE--START: for assign _CODE_SET_
             // _CODE_SET_utsatauuas
             if ($custom_data2 == 2) {
-                $_CODE_SET_edom_timing = sisfo_is_uts_or_uas(); //UTS or UAS
+                $edom_timing = sisfo_is_uts_or_uas(); //UTS or UAS
             } else {
-                $_CODE_SET_edom_timing = 'UTS';
+                $edom_timing = 'UTS';
             }
             //AMRNOTE-- END : for assign _CODE_SET_
             $temp_data = $this->mkuesioner->get_periode_data($id_periode);
@@ -474,6 +475,9 @@ class Kuesioner extends CI_Controller {
                     if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
                         if (strpos($value, $this->config->item('kuesioner_ftisfc')) !== FALSE) {
                             $var3 = str_replace('}', '', str_replace('{', '', $value));
+                            
+                            $var3 = str_replace($this->config->item('kuesioner_ftisfc'), '', $var3);
+                            
                             if (isset($$var3)) {
                                 $str_to_save3 = str_replace($value, $$var3, $str_to_save3);
                             } else {
