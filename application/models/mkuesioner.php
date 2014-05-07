@@ -167,7 +167,8 @@ class mkuesioner extends CI_Model {
                         WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW()";*/
                     $queryii = $db_dflt->query($sqlii);
                     $resuliichecker = $queryii->row();
-                    $needrefresh = $resuliichecker->expired;
+                    //$needrefresh = $resuliichecker->expired;
+                    $needrefresh = TRUE;
                     $resultii = $queryii->result();
                     if (($queryii->num_rows() < 1) || ($needrefresh == TRUE)) {
                         //menjalankan query dari config untuk me-generate form kuesioner
@@ -259,7 +260,7 @@ class mkuesioner extends CI_Model {
                             );
                             //print_r($str_to_save3);
                             
-                            $db_dflt->insert($obj_periode->tabel_jawaban, $data_mysql);
+                            //$db_dflt->insert($obj_periode->tabel_jawaban, $data_mysql);
                         }
                     }
                 }

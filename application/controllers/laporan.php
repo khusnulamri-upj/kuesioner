@@ -19,7 +19,7 @@ class Laporan extends CI_Controller {
     public function edom_0_process() {
         $this->load->model('mlaporan');
         
-        if ($this->input->post('submit') == 'Lihat') {
+        if ($this->input->post('submit') == 'Proses') {
             $newdata = array(
                 'edom_0_process_tahun' => $this->input->post('edom_0_process_tahun')
             );
@@ -53,7 +53,7 @@ class Laporan extends CI_Controller {
         $data['html'] .= '</select></td>';
         
         $data['html'] .= '</tr></table>';
-        $data['html'] .= '<input name="submit" type="submit" value="Lihat">';
+        $data['html'] .= '<input name="submit" type="submit" value="Proses">';
         $data['html'] .= '</form>';
         
         $this->load->view('laporan/laporan',$data);
@@ -241,13 +241,16 @@ class Laporan extends CI_Controller {
             $row_before = new stdClass();
             //$header_created = FALSE;
             $is_empty_data_layout_created = FALSE;
+            $html_data_footer = '';
+            $idx = 0;
+            $ii = 0;
             $empty_data_layout = '';
             $header_html_data = '';
             $html_header_last_data = '';
-            $html_data_footer = '';
-            $ii = 0;
-            $idx = 0;
+            $fix_empty_data_layout = '';
+            $fix_header_html_data = '';
             while (true) {
+                
                 if (key_exists($idx, $list_data)) {
                     $obj = $list_data[$idx];
                 } else {
@@ -256,9 +259,9 @@ class Laporan extends CI_Controller {
                 
                 //row tahun
                 if (is_object($row_before)) {
-                    if (!property_exists($row_before,'TahunID')) {
+                    if (!property_exists($row_before,'TahunID')) { //untuk baris paling awal
                         $html_data .= '<tr><td></td><td{colspan_1}><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
-                    } else if ($row_before->TahunID != $obj->TahunID) {
+                    } else if ($row_before->TahunID != $obj->TahunID) { //jika ada perbedaan tahun
                         $html_data .= '<tr><td></td><td{colspan_1}><b>Tahun : '.$obj->TahunID.'</b></td></tr>';
                     }
                 }
@@ -269,17 +272,19 @@ class Laporan extends CI_Controller {
                         (!property_exists($row_before,'JamMulai')) &&
                         (!property_exists($row_before,'JamSelesai')) &&
                         (!property_exists($row_before,'RuangID')) &&
-                        (!property_exists($row_before,'Nama_Dosen'))) {
+                        (!property_exists($row_before,'Nama_Dosen')) &&
+                        (!property_exists($row_before,'prodi'))) {
                     $html_data .= '<tr>';
-                    $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td>';
+                    $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td><td>'.$obj->prodi.'</td>';
                 } else if (($row_before->Nama_MK != $obj->Nama_MK) ||
                         ($row_before->MKKode != $obj->MKKode) ||
                         ($row_before->Hari != $obj->Hari) ||
                         ($row_before->JamMulai != $obj->JamMulai) ||
                         ($row_before->JamSelesai != $obj->JamSelesai) ||
                         ($row_before->RuangID != $obj->RuangID) ||
-                        ($row_before->Nama_Dosen != $obj->Nama_Dosen)) {
-                    $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td>';
+                        ($row_before->Nama_Dosen != $obj->Nama_Dosen) ||
+                        ($row_before->prodi != $obj->prodi)) {
+                    $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->Nama_MK.'<sup>'.$obj->MKKode.'</sup></td><td>'.$obj->Hari.'</td><td><sup>'.substr($obj->JamMulai,0,-3).'</sup>&#8594;<sub>'.substr($obj->JamSelesai,0,-3).'</sub></td><td>'.$obj->RuangID.'</td><td>'.$obj->Nama_Dosen.'</td><td>'.$obj->prodi.'</td>';
                 }
                     
                 $respondent_html = '<td>';
@@ -289,26 +294,40 @@ class Laporan extends CI_Controller {
                 if (strpos($obj->flag, 'NONE') !== FALSE) {
                     $pertanyaan_html = '<td>{no_data}</td><td>&nbsp;</td></tr>';
                 }
-                if (strpos($obj->flag, 'PERTANYAAN') !== FALSE) {
-                    $pertanyaan_html = '<td align="center">'.$obj->nilai.'</td>';
-                    if (!$is_empty_data_layout_created) {
-                        $empty_data_layout .= '<td>&nbsp;</td>';
+                if (strpos($obj->flag, 'PILIHAN') !== FALSE) {
+                    $pertanyaan_html = '<td align="center" id="kolomrata">'.$obj->nilai.'</td>{added_col}';
+                    //if (!$is_empty_data_layout_created) {
+                        $empty_data_layout .= '<td id="kolomrata">&nbsp;</td>';
                         $header_html_data .= '<th align="center">'.++$ii.'</th>';
-                    }
+                    //}
                 }
                 if (strpos($obj->flag, 'TOTAL') !== FALSE) {
-                    $pertanyaan_html = '<td align="center">'.$obj->nilai.'</td>{keterangan}</tr>';
-                    if (!$is_empty_data_layout_created) {
-                        $empty_data_layout .= '<td>&nbsp;</td>';
+                    $pertanyaan_html = '<td align="center">'.$obj->nilai.'</td>{keterangan}{no_respondent}</tr>';
+                    //if (!$is_empty_data_layout_created) {
+                        $empty_data_layout .= '<td>&nbsp;</td><td>&nbsp;</td>';
                         $html_header_last_data = '<th rowspan="2">Rata- Rata</th>';
-                        $is_empty_data_layout_created = TRUE;
-                    }
+                        //$is_empty_data_layout_created = TRUE;
+                        if (strlen($fix_empty_data_layout) < strlen($empty_data_layout)) {
+                            $fix_empty_data_layout = $empty_data_layout;
+                            $fix_header_html_data = $header_html_data;
+                            $ttl_ii = $ii;
+                        }
+                        $ii = 0;
+                        $empty_data_layout = '';
+                        $header_html_data = '';
+                    //}
                     //print_r($pertanyaan_html);
                     //print_r($obj->keterangan);
                     if (isset($obj->keterangan)) {
                         $pertanyaan_html = str_replace('{keterangan}', '<td>'.$obj->keterangan.'</td>', $pertanyaan_html);
                     } else {
                         $pertanyaan_html = str_replace('{keterangan}', '<td>&nbsp;</td>', $pertanyaan_html);
+                    }
+                    
+                    if (isset($obj->respondent)) {
+                        $pertanyaan_html = str_replace('{no_respondent}', '<td>'.$obj->respondent.'</td>', $pertanyaan_html);
+                    } else {
+                        $pertanyaan_html = str_replace('{no_respondent}', '<td>&nbsp;</td>', $pertanyaan_html);
                     }
                 }
                 
@@ -317,6 +336,16 @@ class Laporan extends CI_Controller {
                     $html_data .= $pertanyaan_html.'</tr>';
                 } else {
                     $html_data .= $pertanyaan_html;
+                }
+                
+                if (is_object($row_before)) {
+                    if (property_exists($row_before,'created_at')) {
+                        if ($row_before->created_at > $obj->created_at) {
+                            $last_update = $row_before->created_at;
+                        } else {
+                            $last_update = $obj->created_at;
+                        }
+                    }
                 }
                 
                 $row_before = $obj;
@@ -377,15 +406,17 @@ class Laporan extends CI_Controller {
             }*/
             $html_data .= '</table>';
             
-            $empty_data_layout = substr(substr($empty_data_layout, 4), 0, -5);
-            $html_data = str_replace('{no_data}', $empty_data_layout, $html_data);
+            //$jml_kol_rata2_seharusnya = substr_count($fix_empty_data_layout, 'id="kolomrata2"');
+            //print_r($jml_kol_rata2_seharusnya);
+            $fix_empty_data_layout = substr(substr($fix_empty_data_layout, 4), 0, -5);
+            $html_data = str_replace('{no_data}', $fix_empty_data_layout, $html_data);
             
-            $html_header = '<tr><th rowspan="2">No</th><th rowspan="2">Mata Kuliah</th><th colspan="3">Jadwal</th><th rowspan="2">Nama Dosen</th><th colspan="'.$ii.'">Pertanyaan</th>'.$html_header_last_data.'<th rowspan="2">Keterangan</th></tr><tr><th>Hari</th><th>Jam</th><th>Kelas</th>'.$header_html_data.'</tr>';
+            $html_header = '<tr><th rowspan="2">No</th><th rowspan="2">Mata Kuliah</th><th colspan="3">Jadwal</th><th rowspan="2">Nama Dosen</th><th rowspan="2">Prodi</th><th colspan="'.$ttl_ii.'">Pertanyaan</th>'.$html_header_last_data.'<th rowspan="2">Keterangan</th><th rowspan="2">Jumlah Respon</th></tr><tr><th>Hari</th><th>Jam</th><th>Kelas</th>'.$fix_header_html_data.'</tr>';
             $html_data = str_replace('{table_header}', $html_header, $html_data);
             
-            $html_data = str_replace('{colspan_1}', ' colspan="'.(5+$ii+2).'"', $html_data);
+            $html_data = str_replace('{colspan_1}', ' colspan="'.(5+$ttl_ii+4).'"', $html_data);
             
-            $data['html'] .= $html_data;
+            $data['html'] .= $html_data.'<p><span style="font-size:12px;"> Terakhir diproses : '.$last_update.'</span></p>';
             
             //print_r($data['html']);
             //exit();
@@ -453,21 +484,9 @@ class Laporan extends CI_Controller {
         $list_tahun = $this->mlaporan->edom_0_get_tahun();
         $data['html'] = $html_css.'<form method="POST" action="'.site_url('laporan/edom_1').'">';
         $data['html'] .= '<table><tr>';
-        $data['html'] .= '<td>Tahun : </td><td><select name="edom_1_tahun[]" multiple="multiple">';
-        foreach ($list_tahun as $obj) {
-            $selected = '';
-            $sess_tahun = $this->session->userdata('edom_1_tahun');
-            if (is_array($sess_tahun)) {
-                if (in_array($obj->tahun, $sess_tahun) ) {
-                    $selected = ' selected="selected"';
-                }
-            }
-            $data['html'] .= '<option value="'.$obj->tahun.'"'.$selected.'>'.$obj->deskripsi.'</option>';
-        }
-        $data['html'] .= '</select></td>';
         
         $select_dosen = '<td>Dosen : </td><td><select name="edom_1_dosen">';
-        $list_dosen = $this->mlaporan->edom_1_get_dosen_by_tahun($this->session->userdata('edom_1_tahun'));
+        $list_dosen = $this->mlaporan->edom_1_get_dosen_from_processed();
         if ($list_dosen != FALSE) {
             foreach ($list_dosen as $obj) {
                 $selected = '';
@@ -488,6 +507,19 @@ class Laporan extends CI_Controller {
             $select_dosen = str_replace('<select name="edom_1_dosen">','<select name="edom_1_dosen" disabled="disabled">',$select_dosen);
         }
         $data['html'] .= $select_dosen;
+        
+        $data['html'] .= '<td>Tahun : </td><td><select name="edom_1_tahun[]" multiple="multiple">';
+        foreach ($list_tahun as $obj) {
+            $selected = '';
+            $sess_tahun = $this->session->userdata('edom_1_tahun');
+            if (is_array($sess_tahun)) {
+                if (in_array($obj->tahun, $sess_tahun) ) {
+                    $selected = ' selected="selected"';
+                }
+            }
+            $data['html'] .= '<option value="'.$obj->tahun.'"'.$selected.'>'.$obj->deskripsi.'</option>';
+        }
+        $data['html'] .= '</select></td>';
         
         $select_mk = '<td>Mata Kuliah : </td><td><select name="edom_1_mk">';
         $list_mk = $this->mlaporan->edom_1_get_mk_by_tahun_and_dosen($this->session->userdata('edom_1_tahun'), $this->session->userdata('edom_1_dosen'));
@@ -579,12 +611,12 @@ class Laporan extends CI_Controller {
                     $arr_jadwal_all[] = $obj;
                 }
                 
-                $list_respondent = $this->mlaporan->edom_1_get_respondent_data($this->session->userdata('edom_1_tahun'),
+                /*$list_respondent = $this->mlaporan->edom_1_get_respondent_data($this->session->userdata('edom_1_tahun'),
                     $this->session->userdata('edom_1_dosen'), $mkkode, $mkname, $arr_jadwal_all);
                 $list_data = $this->mlaporan->edom_1_get_calc_data_each_pilihan($this->session->userdata('edom_1_tahun'),
                     $this->session->userdata('edom_1_dosen'), $mkkode, $mkname, $arr_jadwal_all);
                 $list_data2 = $this->mlaporan->edom_1_get_isian_data_each_pertanyaan($this->session->userdata('edom_1_tahun'),
-                    $this->session->userdata('edom_1_dosen'), $mkkode, $mkname, $arr_jadwal_all);
+                    $this->session->userdata('edom_1_dosen'), $mkkode, $mkname, $arr_jadwal_all);*/
             }
             
             if ($list_respondent != NULL) {
@@ -619,7 +651,7 @@ class Laporan extends CI_Controller {
                 $i = 1;
                 foreach ($list_data2 as $obj) {
                     $html_data .= '<tr>';
-                    if ($obj->tipe != 'PERTANYAAN') {
+                    if ($obj->tipe != 'PILIHAN') {
                         $html_data .= '<td align="right">'.$i++.'</td><td>'.$obj->konten.'</td>';
                     } else {
                         $html_data .= '<td colspan="2">'.$obj->konten.'</td>';
