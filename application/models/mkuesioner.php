@@ -151,95 +151,116 @@ class mkuesioner extends CI_Model {
                     exit('#Check your config. @Prd09');
                 }
                 if (!empty($row->generator_config)) {
-                    //menjalankan query dari config untuk me-generate form kuesioner
                     $str_func = str_replace('()', '', $row->respondent_id);
-                    $arr_conf_db = explode(';',$row->generator_config);
-                    $db_name = str_replace('"', '', str_replace('db=', '', $arr_conf_db[0]));
-                    $db_query = str_replace('"', '', str_replace('sql=', '', $arr_conf_db[1]));
-                    $db_tmp = $this->load->database($db_name, TRUE);
-                    $sql_tmp = str_replace('{respondent_id}', $str_func(), $db_query);
-                    $qry_tmp = $db_tmp->query($sql_tmp);
-                    $db_tmp->close();
-                    foreach ($qry_tmp->result() as $row_tmp) {
-                        $deskripsi_return = $row->deskripsi;
-                        //deskripsi
-                        $arr_prop_tmp = get_object_vars($row_tmp);
-                        foreach($arr_prop_tmp as $key => $value) {
-                            if (strpos($deskripsi_return,'{'.$key.'}') !== FALSE) {
-                                $deskripsi_return = str_replace('{'.$key.'}', $row_tmp->$key, $deskripsi_return);
-                            }
-                        }
-                        //membuat string data yang akan disimpan dalam database
-                        $str_to_save = $row->custom_data_format;
-                        $arr_field_save = explode($row->separator, $str_to_save);
-                        //replace string data to save
-                        if ((sizeof($arr_field_save) > 0) && (!empty($arr_field_save[0]))) {
-                            foreach($arr_field_save as $value) {
-                                if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
-                                    if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
-                                        $field_save = str_replace('}', '', str_replace('{', '', $value));
-                                        $str_to_save = str_replace($value, $row_tmp->$field_save, $str_to_save);
-                                        //$deskripsi_return = str_replace($value, $row_tmp->$field_save, $deskripsi_return);
-                                    }
+                    
+                    //check di temp_list
+                    $sqlii = "SELECT tl.id_periode, tl.id_kuesioner, tl.respondent_id, tl.deskripsi,
+                        tl.custom_data, tl.custom_data2, tl.custom_data3, tl.throwed_data, tl.separator,
+                        IF( DATE_ADD( tl.created_at, INTERVAL '3:00:00' HOUR_SECOND ) < NOW( ) , TRUE , FALSE ) AS expired
+                        FROM temp_list tl
+                        WHERE tl.id_periode = ".$row->id_periode."
+                        AND tl.id_kuesioner = ".$row->id_kuesioner."
+                        AND tl.respondent_id = '".$str_func()."'";
+                    /*$sql = "SELECT *
+                        FROM periode p
+                        LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
+                        WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW()";*/
+                    $queryii = $db_dflt->query($sqlii);
+                    $resuliichecker = $queryii->row();
+                    $needrefresh = $resuliichecker->expired;
+                    $resultii = $queryii->result();
+                    if (($queryii->num_rows() < 1) || ($needrefresh == TRUE)) {
+                        //menjalankan query dari config untuk me-generate form kuesioner
+                        $arr_conf_db = explode(';',$row->generator_config);
+                        $db_name = str_replace('"', '', str_replace('db=', '', $arr_conf_db[0]));
+                        $db_query = str_replace('"', '', str_replace('sql=', '', $arr_conf_db[1]));
+                        $db_tmp = $this->load->database($db_name, TRUE);
+                        $sql_tmp = str_replace('{respondent_id}', $str_func(), $db_query);
+                        $qry_tmp = $db_tmp->query($sql_tmp);
+                        $db_tmp->close();
+                        foreach ($qry_tmp->result() as $row_tmp) {
+                            $deskripsi_return = $row->deskripsi;
+                            //deskripsi
+                            $arr_prop_tmp = get_object_vars($row_tmp);
+                            foreach($arr_prop_tmp as $key => $value) {
+                                if (strpos($deskripsi_return,'{'.$key.'}') !== FALSE) {
+                                    $deskripsi_return = str_replace('{'.$key.'}', $row_tmp->$key, $deskripsi_return);
                                 }
                             }
-                        } else {
-                            exit('#Check your config. @Prd10');
-                        }
-                        //string save kedua
-                        $str_to_save2 = $row->custom_data2_format;
-                        $arr_field_save2 = explode($row->separator, $str_to_save2);
-                        if (sizeof($arr_field_save2) > 0) {
-                            foreach($arr_field_save2 as $value) {
-                                if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
-                                    if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
-                                        $field_save2 = str_replace('}', '', str_replace('{', '', $value));
-                                        $str_to_save2 = str_replace($value, $row_tmp->$field_save2, $str_to_save2);
-                                        //$deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
-                                    }
-                                }
-                            }
-                        }
-                        //string save ketiga
-                        $str_to_save3 = $row->custom_data3_format;
-                        $arr_field_save3 = explode($row->separator, $str_to_save3);
-                        if (sizeof($arr_field_save3) > 0) {
-                            foreach($arr_field_save3 as $value) {
-                                if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
-                                    if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
-                                        $field_save3 = str_replace('}', '', str_replace('{', '', $value));
-                                        if (!property_exists($row_tmp,$field_save3)) {
-                                            exit('#Check your config. @Prd12');
+                            //membuat string data yang akan disimpan dalam database
+                            $str_to_save = $row->custom_data_format;
+                            $arr_field_save = explode($row->separator, $str_to_save);
+                            //replace string data to save
+                            if ((sizeof($arr_field_save) > 0) && (!empty($arr_field_save[0]))) {
+                                foreach($arr_field_save as $value) {
+                                    if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
+                                        if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
+                                            $field_save = str_replace('}', '', str_replace('{', '', $value));
+                                            $str_to_save = str_replace($value, $row_tmp->$field_save, $str_to_save);
+                                            //$deskripsi_return = str_replace($value, $row_tmp->$field_save, $deskripsi_return);
                                         }
-                                        $str_to_save3 = str_replace($value, $row_tmp->$field_save3, $str_to_save3);
-                                        //$deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
+                                    }
+                                }
+                            } else {
+                                exit('#Check your config. @Prd10');
+                            }
+                            //string save kedua
+                            $str_to_save2 = $row->custom_data2_format;
+                            $arr_field_save2 = explode($row->separator, $str_to_save2);
+                            if (sizeof($arr_field_save2) > 0) {
+                                foreach($arr_field_save2 as $value) {
+                                    if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
+                                        if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
+                                            $field_save2 = str_replace('}', '', str_replace('{', '', $value));
+                                            $str_to_save2 = str_replace($value, $row_tmp->$field_save2, $str_to_save2);
+                                            //$deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
+                                        }
                                     }
                                 }
                             }
-                        }
-                        //membuat string data yang akan digunakan dalam coding
-                        $str_to_throw = $row->data_helper;
-                        $arr_field_throw = explode($row->separator, $str_to_throw);
-                        if (sizeof($arr_field_throw) > 0) {
-                            foreach($arr_field_throw as $value) {
-                                if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
-                                    $field_throw = str_replace('}', '', str_replace('{', '', $value));
-                                    $str_to_throw = str_replace($value, $field_throw.'='.$row_tmp->$field_throw, $str_to_throw);
+                            //string save ketiga
+                            $str_to_save3 = $row->custom_data3_format;
+                            $arr_field_save3 = explode($row->separator, $str_to_save3);
+                            if (sizeof($arr_field_save3) > 0) {
+                                foreach($arr_field_save3 as $value) {
+                                    if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
+                                        if (strpos($value, $this->config->item('kuesioner_ftisfc')) == FALSE) {
+                                            $field_save3 = str_replace('}', '', str_replace('{', '', $value));
+                                            if (!property_exists($row_tmp,$field_save3)) {
+                                                exit('#Check your config. @Prd12');
+                                            }
+                                            $str_to_save3 = str_replace($value, $row_tmp->$field_save3, $str_to_save3);
+                                            //$deskripsi_return = str_replace($value, $row_tmp->$field_save2, $deskripsi_return);
+                                        }
+                                    }
                                 }
                             }
+                            //membuat string data yang akan digunakan dalam coding
+                            $str_to_throw = $row->data_helper;
+                            $arr_field_throw = explode($row->separator, $str_to_throw);
+                            if (sizeof($arr_field_throw) > 0) {
+                                foreach($arr_field_throw as $value) {
+                                    if ((strpos($value,'{') !== FALSE) && (strpos($value,'}') !== FALSE)) {
+                                        $field_throw = str_replace('}', '', str_replace('{', '', $value));
+                                        $str_to_throw = str_replace($value, $field_throw.'='.$row_tmp->$field_throw, $str_to_throw);
+                                    }
+                                }
+                            }
+                            $arr_obj_return[] = (object) array(
+                                'id_periode' => $row->id_periode,
+                                'id_kuesioner' => $row->id_kuesioner,
+                                'deskripsi' => $deskripsi_return,
+                                'custom_data' => $str_to_save,
+                                'custom_data2' => $str_to_save2,
+                                'custom_data3' => $str_to_save3,
+                                'respondent_id' => $str_func(),
+                                'throwed_data' => $str_to_throw,
+                                'separator' => $row->separator
+                            );
+                            //print_r($str_to_save3);
+                            
+                            $db_dflt->insert($obj_periode->tabel_jawaban, $data_mysql);
                         }
-                        $arr_obj_return[] = (object) array(
-                            'id_periode' => $row->id_periode,
-                            'id_kuesioner' => $row->id_kuesioner,
-                            'deskripsi' => $deskripsi_return,
-                            'custom_data' => $str_to_save,
-                            'custom_data2' => $str_to_save2,
-                            'custom_data3' => $str_to_save3,
-                            'respondent_id' => $str_func(),
-                            'throwed_data' => $str_to_throw,
-                            'separator' => $row->separator
-                        );
-                        //print_r($str_to_save3);
                     }
                 }
                 //DELETE KUESIONER THAT HAS BEEN FILLED (MARK that KUESIONER HAS BEEN FILLED)

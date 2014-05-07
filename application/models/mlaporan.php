@@ -22,6 +22,33 @@ class mlaporan extends CI_Model {
         return FALSE;
     }
     
+    function edom_0_get_processed_data($arr_tahun = NULL) {
+        $tbl_laporan = 'edom_laporan';
+        $in_tahun = "IN (";
+        if ($arr_tahun == NULL) {
+            return FALSE;
+        } else {
+            foreach ($arr_tahun as $value) {
+                $in_tahun .= $value.',';
+            }
+            $in_tahun = substr($in_tahun, 0, (strlen($in_tahun)-1));
+        }
+        $in_tahun .= ")";
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.DosenID, a.order_no, a.Hari, a.Nama_Dosen, a.flag, a.flag_no, a.nilai, a.keterangan
+            FROM ".$tbl_laporan." a
+            WHERE a.modified_at IS NULL
+            AND a.TahunID ".$in_tahun."
+            AND a.nilai_isian IS NULL
+            ORDER BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.order_no, a.DosenID, a.flag, a.flag_no";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
+    }
+    
     function edom_0_process_rata2($arr_tahun = NULL) {
         $tbl_laporan = 'edom_laporan';
         $edom_0_obj_jadwal = $this->edom_0_get_list_jadwal($arr_tahun);
@@ -53,13 +80,16 @@ class mlaporan extends CI_Model {
             
             //get prodi
             $prodi_id = '';
+            $list_jadwal_id = '';
             foreach ($obj_jadwal_id as $o) {
                 $prodi_id .= $o->ProdiID.',';
+                $list_jadwal_id .= $o->JadwalID.',';
             }
             $prodi_id = substr($prodi_id, 0, (strlen($prodi_id)-1));
             
             $arr_obj_to_save = $obj;
             $arr_obj_to_save->prodi = $prodi_id;
+            $arr_obj_to_save->JadwalID = $list_jadwal_id;
             if ($obj_calc_data) {
                 foreach ($obj_calc_data as $obj2) {
                     $arr_obj_to_save->flag = $obj2->id;
@@ -77,33 +107,6 @@ class mlaporan extends CI_Model {
         }
         $db_dflt->trans_complete();
         $db_dflt->close();
-    }
-    
-    function edom_0_get_processed_data($arr_tahun = NULL) {
-        $tbl_laporan = 'edom_laporan';
-        $in_tahun = "IN (";
-        if ($arr_tahun == NULL) {
-            return FALSE;
-        } else {
-            foreach ($arr_tahun as $value) {
-                $in_tahun .= $value.',';
-            }
-            $in_tahun = substr($in_tahun, 0, (strlen($in_tahun)-1));
-        }
-        $in_tahun .= ")";
-        $db_dflt = $this->load->database('default', TRUE);
-        $sql = "SELECT a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.DosenID, a.order_no, a.Hari, a.Nama_Dosen, a.flag, a.flag_no, a.nilai, a.keterangan
-            FROM ".$tbl_laporan." a
-            WHERE a.modified_at IS NULL
-            AND a.TahunID ".$in_tahun."
-            AND a.nilai_isian IS NULL
-            ORDER BY a.TahunID, a.MKKode, a.Nama_MK, a.HariID, a.JamMulai, a.JamSelesai, a.RuangID, a.order_no, a.DosenID, a.flag, a.flag_no";
-        $query = $db_dflt->query($sql);
-        $db_dflt->close();
-        if ($query->num_rows() > 0) {
-            return $query->result();
-        }
-        return FALSE;
     }
     
     function edom_0_get_list_jadwal($arr_tahun = NULL) {
