@@ -298,9 +298,9 @@ class Kuesioner extends CI_Controller {
                 if ($obj->tipe == 'kategori') {
                     $html_pertanyaan .= '<td class="width-set2">&nbsp;</td><td colspan="'.$for_colspan.'"><b>'.$obj->isi.'</b></td>';
                 } else if ($obj->tipe == 'isian') {
-                    $html_pertanyaan .= '<td class="width-set2">'.++$index.'</td><td>'.$obj->isi.'</td><td colspan="'.$for_colspan.'"></td>';
+                    $html_pertanyaan .= '<td class="width-set2">'.$obj->order_num.'</td><td>'.$obj->isi.'</td><td colspan="'.$for_colspan.'"></td>';
                 } else {
-                    $html_pertanyaan .= '<td class="width-set2">'.++$index.'</td><td>'.$obj->isi.'</td>';
+                    $html_pertanyaan .= '<td class="width-set2">'.$obj->order_num.'</td><td>'.$obj->isi.'</td>';
                 }
                 if ($obj->tipe == 'pilihan') {
                     $enc_id_pertanyaan = $this->encrypt->encode('pilihantanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);

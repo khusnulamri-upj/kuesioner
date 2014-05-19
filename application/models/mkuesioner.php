@@ -126,14 +126,14 @@ class mkuesioner extends CI_Model {
     
     function edom_list_active_kuesioner() {
         $db_dflt = $this->load->database('default', TRUE);
-        $sql = "SELECT *
-            FROM periode p
-            LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
-            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW() AND mk.shortname = 'EDOM'";
         /*$sql = "SELECT *
             FROM periode p
             LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
-            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW()";*/
+            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW() AND mk.shortname = 'EDOM'";*/
+        $sql = "SELECT *
+            FROM periode p
+            LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
+            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW()";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         $return = array();
@@ -370,9 +370,9 @@ class mkuesioner extends CI_Model {
         $db_dflt = $this->load->database('default', TRUE);
 
         $sql = "SELECT * FROM (
-            SELECT aa.id_pertanyaan, aa.id_kuesioner, aa.isi, aa.tipe, aa.id_kategori, aa.id_grup_pilihan, aa.id_grup_pilihan2, aa.jml_pilihan, aa.jml_pilihan2, IF(aa.order_no > 0, aa.order_no, 0) AS order_no FROM (
+            SELECT aa.id_pertanyaan, aa.id_kuesioner, aa.isi, aa.tipe, aa.id_kategori, aa.id_grup_pilihan, aa.id_grup_pilihan2, aa.jml_pilihan, aa.jml_pilihan2, IF(aa.order_no > 0, aa.order_no, 0) AS order_no, aa.order_num AS order_num FROM (
             SELECT mp.*, pp.jml_pilihan, pp2.jml_pilihan2,
-            IF(mp.id_kategori <= 0,((SELECT MAX(tmp.id_kategori) FROM master_pertanyaan tmp)*10+3),(mp.id_kategori*10+2)) AS order_no
+            IF(mp.id_kategori <= 0,((SELECT MAX(tmp.id_kategori) FROM master_pertanyaan tmp)*10+3),(mp.id_kategori*10+2)) AS order_no, mp.order AS order_num
             FROM master_pertanyaan mp
             LEFT OUTER JOIN ( 
             SELECT p.id_grup_pilihan, count(*) AS jml_pilihan 
@@ -386,7 +386,7 @@ class mkuesioner extends CI_Model {
             ) pp2 ON mp.id_grup_pilihan2 = pp2.id_grup_pilihan 
             WHERE mp.id_kuesioner = ".$id_kuesioner.") aa
             UNION
-            SELECT NULL, NULL, kp.nama, 'kategori', kp.id_kategori, NULL, NULL, NULL, NULL, IF(kp.id_kategori <= 0,((SELECT MAX(tmp2.id_kategori) FROM master_pertanyaan tmp2)*10+3),(kp.id_kategori*10+1)) AS order_no
+            SELECT NULL, NULL, kp.nama, 'kategori', kp.id_kategori, NULL, NULL, NULL, NULL, IF(kp.id_kategori <= 0,((SELECT MAX(tmp2.id_kategori) FROM master_pertanyaan tmp2)*10+3),(kp.id_kategori*10+1)) AS order_no, NULL AS order_num
             FROM master_pertanyaan mp
             JOIN kategori_pertanyaan kp ON mp.id_kategori = kp.id_kategori
             WHERE mp.id_kuesioner = ".$id_kuesioner."

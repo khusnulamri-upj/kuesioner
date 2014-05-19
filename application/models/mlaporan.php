@@ -112,6 +112,7 @@ class mlaporan extends CI_Model {
             }
             if ($obj_calc_data_isian) {
                 foreach ($obj_calc_data_isian as $obj2) {
+                    $arr_obj_to_save->id_pertanyaan = $obj2->id_pertanyaan;
                     $arr_obj_to_save->flag = $obj2->id;
                     $arr_obj_to_save->flag_no = $obj2->flag_no;
                     $arr_obj_to_save->nilai = $obj2->nilai;
@@ -372,11 +373,12 @@ class mlaporan extends CI_Model {
         
         $db_dflt = $this->load->database('default', TRUE);
         $db_dflt->trans_start();
-        $sql = "SELECT 'PILIHAN' AS id, vvv.id AS flag_no, vvv.nilai, NULL AS nilai_isian".$sql_grade."
+        $sql = "SELECT vvv.id AS id_pertanyaan, 'PILIHAN' AS id, vvv.order AS flag_no, vvv.nilai, NULL AS nilai_isian".$sql_grade."
             FROM (
-                SELECT vv.id_pertanyaan AS id, ROUND(AVG(p.nilai),2) AS nilai
+                SELECT vv.id_pertanyaan AS id, ROUND(AVG(p.nilai),2) AS nilai, mp.order
                 FROM ".$obj_periode->tabel_jawaban." vv
                 LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
+                LEFT OUTER JOIN master_pertanyaan mp ON vv.id_pertanyaan = mp.id_pertanyaan
                 WHERE SPLIT_STRING(vv.custom_data,'".$obj_periode->separator."',1) = '".$tahun_id."'
                 AND SPLIT_STRING(vv.custom_data,'".$obj_periode->separator."',5) ".$in_jadwal_id."
                 AND SPLIT_STRING(vv.custom_data,'".$obj_periode->separator."',3) = '".$kode_id."'
@@ -385,7 +387,7 @@ class mlaporan extends CI_Model {
                 GROUP BY vv.id_pertanyaan
                 ORDER BY vv.id_pertanyaan ) vvv
             UNION
-            SELECT 'TOTAL' AS id, 0 AS flag_no, ROUND(AVG(p.nilai),2) AS nilai, NULL AS nilai_isian".$sql_grade2."
+            SELECT NULL AS id_pertanyaan, 'TOTAL' AS id, 0 AS flag_no, ROUND(AVG(p.nilai),2) AS nilai, NULL AS nilai_isian".$sql_grade2."
             FROM ".$obj_periode->tabel_jawaban." vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
             WHERE SPLIT_STRING(vv.custom_data,'".$obj_periode->separator."',1) = '".$tahun_id."'
@@ -394,9 +396,10 @@ class mlaporan extends CI_Model {
             AND SPLIT_STRING(vv.custom_data,'".$obj_periode->separator."',6) = '".$dosen_id."'
             AND vv.jawaban_isian IS NULL
             UNION
-            SELECT 'ISIAN' AS id, vv.id_pertanyaan AS flag_no, 0 AS nilai, vv.jawaban_isian AS nilai_isian, NULL AS keterangan
+            SELECT vv.id_pertanyaan AS id_pertanyaan, 'ISIAN' AS id, mp.order AS flag_no, 0 AS nilai, vv.jawaban_isian AS nilai_isian, NULL AS keterangan
             FROM ".$obj_periode->tabel_jawaban." vv
             LEFT OUTER JOIN pilihan p ON vv.jawaban_pilihan = p.id_pilihan
+            LEFT OUTER JOIN master_pertanyaan mp ON vv.id_pertanyaan = mp.id_pertanyaan
             WHERE SPLIT_STRING(vv.custom_data,'".$obj_periode->separator."',1) = '".$tahun_id."'
             AND SPLIT_STRING(vv.custom_data,'".$obj_periode->separator."',5) ".$in_jadwal_id."
             AND SPLIT_STRING(vv.custom_data,'".$obj_periode->separator."',3) = '".$kode_id."'
@@ -518,11 +521,37 @@ class mlaporan extends CI_Model {
     //AMR20140507 --START
     function edom_1_get_dosen_from_processed() {
         $db_dflt = $this->load->database('default', TRUE);
-        $sql = "SELECT e.DosenID AS DosenID, TRIM(e.Nama_Dosen) AS Nama_Dosen
+        $sql = "SELECT e.DosenID AS DosenID, e.Nama_Dosen AS Nama_Dosen
             FROM edom_laporan e
             WHERE e.modified_at IS NULL
-            GROUP BY e.DosenID, TRIM(e.Nama_Dosen)
-            ORDER BY TRIM(e.Nama_Dosen)";
+            GROUP BY e.DosenID, e.Nama_Dosen
+            ORDER BY e.Nama_Dosen";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
+    }
+    
+    function edom_1_get_jadwal_by_dosen_and_tahun_from_processed($dosen_id = NULL, $arr_tahun = NULL) {
+        if ($arr_tahun != NULL) {
+            $in_tahun = ' AND l.TahunID IN (';
+            foreach ($arr_tahun as $value) {
+                $in_tahun .= $value.',';
+            }
+            $in_tahun = str_split($in_tahun, (strlen($in_tahun)-1));
+            $in_tahun = $in_tahun[0].') ';
+        } else {
+            $in_tahun = '';
+        }
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.flag, l.nilai, l.keterangan
+            FROM edom_laporan l
+            WHERE l.DosenID = '".$dosen_id."'
+            AND l.modified_at IS NULL
+            AND l.flag IN ('NONE','TOTAL')".$in_tahun."
+            GROUP BY l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.JamMulai, l.JamSelesai, l.RuangID;";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {
