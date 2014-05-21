@@ -544,9 +544,10 @@ class mlaporan extends CI_Model {
             $in_tahun = $in_tahun[0].') ';
         } else {
             $in_tahun = '';
+            return false;
         }
         $db_dflt = $this->load->database('default', TRUE);
-        $sql = "SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.flag, l.nilai, l.keterangan
+        $sql = "SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.flag, l.nilai, l.keterangan, l.created_at
             FROM edom_laporan l
             WHERE l.DosenID = '".$dosen_id."'
             AND l.modified_at IS NULL
@@ -559,115 +560,123 @@ class mlaporan extends CI_Model {
         }
         return FALSE;
     }
+    
+    function edom_1_get_detail_pilihan_from_processed($dosen_id = NULL, $tahunID = NULL, $mk_kode = NULL, $nama_mk = NULL, $hariID = NULL, $jamMulai = NULL, $jamSelesai = NULL, $ruangID = NULL) {
+        /*if ($arr_tahun != NULL) {
+            $in_tahun = ' AND l.TahunID IN (';
+            foreach ($arr_tahun as $value) {
+                $in_tahun .= $value.',';
+            }
+            $in_tahun = str_split($in_tahun, (strlen($in_tahun)-1));
+            $in_tahun = $in_tahun[0].') ';
+        } else {
+            $in_tahun = '';
+            return false;
+        }*/
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT * FROM (
+            SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.prodi, l.flag_no, l.nilai, l.keterangan, l.respondent, mp.isi AS pertanyaan, l.id_pertanyaan AS id_pertanyaan
+            FROM edom_laporan l
+            LEFT OUTER JOIN master_pertanyaan mp ON l.id_pertanyaan = mp.id_pertanyaan
+            WHERE l.flag = 'PILIHAN' 
+            AND l.TahunID = '".$tahunID."'
+            AND l.MKKode = '".$mk_kode."'
+            AND l.Nama_MK = '".$nama_mk."'
+            AND l.HariID = '".$hariID."'
+            AND l.JamMulai = '".$jamMulai."'
+            AND l.JamSelesai = '".$jamSelesai."'
+            AND l.RuangID = '".$ruangID."'
+            AND l.DosenID = '".$dosen_id."'
+            AND l.modified_at IS NULL
+            ORDER BY l.flag_no) o
+            UNION
+            SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.prodi, l.flag_no, l.nilai, l.keterangan, l.respondent, 'Rata-rata' AS pertanyaan, 0 AS id_pertanyaan
+            FROM edom_laporan l
+            WHERE l.flag = 'TOTAL'
+            AND l.TahunID = '".$tahunID."'
+            AND l.MKKode = '".$mk_kode."'
+            AND l.Nama_MK = '".$nama_mk."'
+            AND l.HariID = '".$hariID."'
+            AND l.JamMulai = '".$jamMulai."'
+            AND l.JamSelesai = '".$jamSelesai."'
+            AND l.RuangID = '".$ruangID."'
+            AND l.DosenID = '".$dosen_id."'
+            AND l.modified_at IS NULL";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
+    }
+    
+    function edom_1_get_detail_penilaian($id_pertanyaan = NULL) {
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT p.deskripsi, ROUND(p.min_nilai,2) AS min_nilai, ROUND(p.max_nilai,2) AS max_nilai, p.id_grup_pilihan
+            FROM master_pertanyaan mp
+            JOIN penilaian p ON mp.id_grup_pilihan = p.id_grup_pilihan
+            WHERE mp.id_pertanyaan = ".$id_pertanyaan."
+            UNION
+            SELECT p.deskripsi, ROUND(p.min_nilai,2) AS min_nilai, ROUND(p.max_nilai,2) AS max_nilai, p.id_grup_pilihan
+            FROM master_pertanyaan mp
+            JOIN penilaian p ON mp.id_grup_pilihan2 = p.id_grup_pilihan
+            WHERE mp.id_pertanyaan = ".$id_pertanyaan;
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        $arr = array();
+        if ($query->num_rows() > 0) {
+            foreach ($query->result() as $r) {
+                if (!array_key_exists($r->id_grup_pilihan, $arr)) {
+                    $arr[$r->id_grup_pilihan] = array();
+                }
+                $arr[$r->id_grup_pilihan][] = new stdClass();
+                $indx = count($arr[$r->id_grup_pilihan])-1;
+                $arr[$r->id_grup_pilihan][$indx]->deskripsi = $r->deskripsi;
+                $arr[$r->id_grup_pilihan][$indx]->min_nilai = $r->min_nilai;
+                $arr[$r->id_grup_pilihan][$indx]->max_nilai = $r->max_nilai;
+            }
+            return $arr;
+        }
+        return FALSE;
+    }
+    
+    function edom_1_get_detail_isian_from_processed($dosen_id = NULL, $tahunID = NULL, $mk_kode = NULL, $nama_mk = NULL, $hariID = NULL, $jamMulai = NULL, $jamSelesai = NULL, $ruangID = NULL) {
+        /*if ($arr_tahun != NULL) {
+            $in_tahun = ' AND l.TahunID IN (';
+            foreach ($arr_tahun as $value) {
+                $in_tahun .= $value.',';
+            }
+            $in_tahun = str_split($in_tahun, (strlen($in_tahun)-1));
+            $in_tahun = $in_tahun[0].') ';
+        } else {
+            $in_tahun = '';
+            return false;
+        }*/
+        $db_dflt = $this->load->database('default', TRUE);
+        $sql = "SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.prodi, l.flag_no, l.nilai_isian, l.keterangan, l.respondent, mp.isi AS pertanyaan, l.id_pertanyaan AS id_pertanyaan
+            FROM edom_laporan l
+            LEFT OUTER JOIN master_pertanyaan mp ON l.id_pertanyaan = mp.id_pertanyaan
+            WHERE l.flag = 'ISIAN' 
+            AND l.TahunID = '".$tahunID."'
+            AND l.MKKode = '".$mk_kode."'
+            AND l.Nama_MK = '".$nama_mk."'
+            AND l.HariID = '".$hariID."'
+            AND l.JamMulai = '".$jamMulai."'
+            AND l.JamSelesai = '".$jamSelesai."'
+            AND l.RuangID = '".$ruangID."'
+            AND l.DosenID = '".$dosen_id."'
+            AND l.modified_at IS NULL
+            ORDER BY l.flag_no";
+        $query = $db_dflt->query($sql);
+        $db_dflt->close();
+        if ($query->num_rows() > 0) {
+            return $query->result();
+        }
+        return FALSE;
+    }
     //AMR20140507 --END
     
     
-    function edom_1_get_dosen_by_tahun($arr_tahun = NULL) {
-        if ($arr_tahun != NULL) {
-            //$where = 'WHERE je.tahun IN (';
-            $where = 'WHERE j.TahunID IN (';
-            foreach ($arr_tahun as $value) {
-                $where .= $value.',';
-            }
-            $where = str_split($where, (strlen($where)-1));
-            $where = $where[0].')';
-        } else {
-            $where = '';
-        }
-        if ($where != '') {
-            /*$db_dflt = $this->load->database('default', TRUE);
-            $sql = "SELECT je.DosenID, TRIM(je.Nama_Dosen) AS Nama_Dosen
-                FROM jawaban_edom je
-                ".$where."
-                GROUP BY je.DosenID
-                ORDER BY TRIM(je.Nama_Dosen)";*/
-            $db_dflt = $this->load->database('sisfo', TRUE);
-            $sql = "SELECT j.DosenID AS DosenID, TRIM(d.Nama) AS Nama_Dosen
-                FROM krs k
-                LEFT OUTER JOIN jadwal j ON k.JadwalID = j.JadwalID
-                LEFT OUTER JOIN dosen d ON j.DosenID = d.Login
-                ".$where."
-                AND k.NA = 'N'
-                GROUP BY j.DosenID
-                ORDER BY TRIM(d.Nama)";
-            $query = $db_dflt->query($sql);
-            $db_dflt->close();
-            if ($query->num_rows() > 0) {
-                return $query->result();
-            }
-        }
-        return FALSE;
-    }
-    
-    function edom_1_get_mk_by_tahun_and_dosen($arr_tahun = NULL, $dosen_id = NULL) {
-        if (($arr_tahun != NULL) && ($dosen_id != NULL)) {
-            $where = 'WHERE k.TahunID IN (';
-            foreach ($arr_tahun as $value) {
-                $where .= $value.',';
-            }
-            $where = str_split($where, (strlen($where)-1));
-            $where = $where[0].')';
-            $where .= " AND j.DosenID = '".$dosen_id."'";
-        } else {
-            $where = '';
-        }
-        if ($where != '') {
-            /*$db_dflt = $this->load->database('default', TRUE);
-            $sql = "SELECT je.MKID, je.MKKode, je.Nama_MK, je.DosenID, je.Nama_Dosen
-                FROM jawaban_edom je
-                ".$where."
-                GROUP BY je.MKID, je.DosenID, je.tahun";*/
-            $db_dflt = $this->load->database('sisfo', TRUE);
-            $sql = "SELECT CONCAT(k.MKKode,'&&',k.Nama) AS MKKode, CONCAT(k.MKKode,' - ',k.Nama) AS Nama_MK
-                FROM krs k
-                LEFT OUTER JOIN jadwal j ON k.JadwalID = j.JadwalID
-                ".$where."
-                AND k.NA = 'N'
-                GROUP BY k.MKKode, k.Nama
-                ORDER BY CONCAT(k.MKKode,' - ',k.Nama)";
-            $query = $db_dflt->query($sql);
-            $db_dflt->close();
-            if ($query->num_rows() > 0) {
-                return $query->result();
-            }
-        }
-        return FALSE;
-    }
-    
-    function edom_1_get_jadwal_by_tahun_and_dosen_and_mk($arr_tahun = NULL, $dosen_id = NULL, $mkkode = NULL, $mkname = NULL) {
-        if (($arr_tahun != NULL) && ($dosen_id != NULL) && ($mkkode != NULL) && ($mkname != NULL)) {
-            $where = 'WHERE k.TahunID IN (';
-            foreach ($arr_tahun as $value) {
-                $where .= $value.',';
-            }
-            $where = str_split($where, (strlen($where)-1));
-            $where = $where[0].')';
-            $where .= " AND j.DosenID = '".$dosen_id."'";
-            $where .= " AND j.MKKode = '".$mkkode."'";
-            $where .= " AND j.Nama LIKE '".$mkname."'";
-        } else {
-            $where = '';
-        }
-        if ($where != '') {
-            $db_dflt = $this->load->database('sisfo', TRUE);
-            $sql = "SELECT CONCAT(j.HariID,'&&',j.JamMulai,'&&',j.JamSelesai,'&&',j.RuangID) AS jadwal, CONCAT(h.Nama,', ',SUBSTRING(j.JamMulai,1,5),'-',SUBSTRING(j.JamSelesai,1,5),' (',j.RuangID,')') AS deskripsi
-                FROM krs k
-                LEFT OUTER JOIN jadwal j ON k.JadwalID = j.JadwalID
-                LEFT OUTER JOIN hari h ON j.HariID = h.HariID
-                ".$where."
-                AND k.NA = 'N'
-                GROUP BY j.HariID, j.JamMulai, j.JamSelesai, j.RuangID
-                ORDER BY j.HariID, j.JamMulai";//GROUP BY CONCAT(j.HariID,'&&',j.JamMulai,'&&',j.JamSelesai,'&&',j.RuangID)
-                
-            //print_r($sql); exit();
-            $query = $db_dflt->query($sql);
-            $db_dflt->close();
-            if ($query->num_rows() > 0) {
-                return $query->result();
-            }
-        }
-        return FALSE;
-    }
 }
 
 ?>

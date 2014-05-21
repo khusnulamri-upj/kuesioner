@@ -1,5 +1,5 @@
 <?php
-//$this->load->view('kuesioner/theader');
+$this->load->view('kuesioner/theader');
 print($html);
-//$this->load->view('kuesioner/tfooter');
+$this->load->view('kuesioner/tfooter');
 ?>

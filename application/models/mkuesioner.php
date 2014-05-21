@@ -391,7 +391,7 @@ class mkuesioner extends CI_Model {
             JOIN kategori_pertanyaan kp ON mp.id_kategori = kp.id_kategori
             WHERE mp.id_kuesioner = ".$id_kuesioner."
             GROUP BY mp.id_kategori) aaa
-            ORDER BY aaa.order_no ASC, aaa.id_pertanyaan";
+            ORDER BY aaa.order_no ASC, aaa.order_num";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {
