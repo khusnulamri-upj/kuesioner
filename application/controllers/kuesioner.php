@@ -11,7 +11,7 @@ class Kuesioner extends CI_Controller {
     }
     
     public function index() {
-        $this->edom_is_exist();
+        //$this->edom_is_exist();
     }
     
     /*public function lists() {
@@ -38,7 +38,7 @@ class Kuesioner extends CI_Controller {
     }*/
     
     public function edom_is_exist() {
-        $this->edom('is_exist');
+        print_r($this->edom('is_exist'));
     }
     
     public function edom($just_for_check = NULL) {
@@ -55,10 +55,11 @@ class Kuesioner extends CI_Controller {
         //print_r($list_kuesioner);
         if (empty($list_kuesioner)) {
             if ($just_for_check == 'is_exist') {
-                echo 'EDOM : '.$is_exist;
+                //echo 'EDOM : '.$is_exist;
+                //print(0);
+                return FALSE;
             }
-            exit();
-            //redirect($this->config->item('kuesioner_app_base'));
+            //exit();
         }
         $index = 1;
         $html_kuesioner = '<table class="bordered">';
@@ -136,10 +137,10 @@ class Kuesioner extends CI_Controller {
         $html_kuesioner .= '</table>';
         $data['html_form'] = $html_kuesioner;
         if ($just_for_check == 'is_exist') {
-            //$data['html_form'] = $is_exist;
-            //$this->load->view('kuesioner/list_kuesioner',$data);
-            echo 'EDOM : '.$is_exist;
-            exit();
+            //echo 'EDOM : '.$is_exist;
+            //print(1);
+            //exit();
+            return TRUE;
         } else {
             $this->load->view('kuesioner/list_kuesioner',$data);
         }

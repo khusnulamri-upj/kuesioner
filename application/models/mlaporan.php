@@ -575,7 +575,7 @@ class mlaporan extends CI_Model {
         }*/
         $db_dflt = $this->load->database('default', TRUE);
         $sql = "SELECT * FROM (
-            SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.prodi, l.flag_no, l.nilai, l.keterangan, l.respondent, mp.isi AS pertanyaan, l.id_pertanyaan AS id_pertanyaan
+            SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.prodi, l.flag_no, l.nilai, l.keterangan, l.respondent, mp.isi AS pertanyaan, l.id_pertanyaan AS id_pertanyaan, l.created_at
             FROM edom_laporan l
             LEFT OUTER JOIN master_pertanyaan mp ON l.id_pertanyaan = mp.id_pertanyaan
             WHERE l.flag = 'PILIHAN' 
@@ -590,7 +590,7 @@ class mlaporan extends CI_Model {
             AND l.modified_at IS NULL
             ORDER BY l.flag_no) o
             UNION
-            SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.prodi, l.flag_no, l.nilai, l.keterangan, l.respondent, 'Rata-rata' AS pertanyaan, 0 AS id_pertanyaan
+            SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.prodi, l.flag_no, l.nilai, l.keterangan, l.respondent, 'Rata-rata' AS pertanyaan, 0 AS id_pertanyaan, l.created_at
             FROM edom_laporan l
             WHERE l.flag = 'TOTAL'
             AND l.TahunID = '".$tahunID."'
@@ -653,7 +653,8 @@ class mlaporan extends CI_Model {
             return false;
         }*/
         $db_dflt = $this->load->database('default', TRUE);
-        $sql = "SELECT l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.prodi, l.flag_no, l.nilai_isian, l.keterangan, l.respondent, mp.isi AS pertanyaan, l.id_pertanyaan AS id_pertanyaan
+        $sql = "SELECT o.* FROM
+            (SELECT mp.order*10+1 AS ordr, l.flag_no AS num, mp.isi AS isi, l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.flag_no, l.id_pertanyaan AS id_pertanyaan, mp.isi AS pertanyaan, l.created_at
             FROM edom_laporan l
             LEFT OUTER JOIN master_pertanyaan mp ON l.id_pertanyaan = mp.id_pertanyaan
             WHERE l.flag = 'ISIAN' 
@@ -666,7 +667,22 @@ class mlaporan extends CI_Model {
             AND l.RuangID = '".$ruangID."'
             AND l.DosenID = '".$dosen_id."'
             AND l.modified_at IS NULL
-            ORDER BY l.flag_no";
+            GROUP BY mp.order
+            UNION ALL
+            SELECT mp.order*10+2 AS ordr, 0 AS num, l.nilai_isian AS isi, l.TahunID, l.MKKode, l.Nama_MK, l.HariID, l.Hari, l.JamMulai, l.JamSelesai, l.RuangID, l.DosenID, l.Nama_Dosen, l.flag_no, l.id_pertanyaan AS id_pertanyaan, mp.isi AS pertanyaan, l.created_at
+            FROM edom_laporan l
+            LEFT OUTER JOIN master_pertanyaan mp ON l.id_pertanyaan = mp.id_pertanyaan
+            WHERE l.flag = 'ISIAN' 
+            AND l.TahunID = '".$tahunID."'
+            AND l.MKKode = '".$mk_kode."'
+            AND l.Nama_MK = '".$nama_mk."'
+            AND l.HariID = '".$hariID."'
+            AND l.JamMulai = '".$jamMulai."'
+            AND l.JamSelesai = '".$jamSelesai."'
+            AND l.RuangID = '".$ruangID."'
+            AND l.DosenID = '".$dosen_id."'
+            AND l.modified_at IS NULL) o
+            ORDER BY o.ordr, o.created_at";
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         if ($query->num_rows() > 0) {
