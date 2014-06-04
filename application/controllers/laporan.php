@@ -17,6 +17,19 @@ class Laporan extends CI_Controller {
     }
     
     public function edom_0_process() {
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+        
+        $html_css = '<style>
+            .laporan {
+                border-collapse:collapse;
+                border: 1px solid black;
+            }
+            .laporan th, .laporan td {
+                border: 1px solid black;
+                padding: 5px 5px 5px 5px;
+            }
+            </style>';
         $this->load->model('mlaporan');
         
         if ($this->input->post('submit') == 'Proses') {
@@ -27,19 +40,19 @@ class Laporan extends CI_Controller {
             //print_r($this->session->userdata('tahun'));
             redirect(current_url(), 'location');
         }
-        print_r($this->session->all_userdata());
+        //print_r($this->session->all_userdata());
         $sess_tahun = $this->session->userdata('edom_0_process_tahun');
         
         if (isset($sess_tahun)) {
             $result = $this->mlaporan->edom_0_process_rata2($sess_tahun);
-            print_r($result.'<br/>');
-            print_r($sess_tahun);
+            //print_r($result.'<br/>');
+            //print_r($sess_tahun);
             $this->session->unset_userdata('edom_0_process_tahun');
         }
         
         $list_tahun = $this->mlaporan->edom_0_get_tahun();
-        $data['html'] = '<form method="POST" action="'.site_url('laporan/edom_0_process').'">';
-        $data['html'] .= '<table><tr>';
+        $data['html'] = $html_css.'<form method="POST" action="'.site_url('laporan/edom_0_process').'">';
+        /*$data['html'] .= '<table><tr>';
         $data['html'] .= '<td>Tahun : </td><td><select name="edom_0_process_tahun[]" multiple="multiple">';
         foreach ($list_tahun as $obj) {
             $selected = '';
@@ -53,8 +66,50 @@ class Laporan extends CI_Controller {
         $data['html'] .= '</select></td>';
         
         $data['html'] .= '</tr></table>';
-        $data['html'] .= '<input name="submit" type="submit" value="Proses">';
+        $data['html'] .= '<input name="submit" type="submit" value="Proses">';*/
+        
+        $data['html'] .= '<script src="'.base_url('/assets/js').'/jquery.min.js"></script>
+            <script src="'.base_url('/assets/vex/js').'/vex.combined.min.js"></script>
+            <script>vex.defaultOptions.className = \'vex-theme-plain\';</script>
+            <link rel="stylesheet" href="'.base_url('/assets/vex/css').'/vex.css" />
+            <link rel="stylesheet" href="'.base_url('/assets/vex/css').'/vex-theme-plain.css" />
+            
+            <script language="JavaScript">
+                function toggle(source) {
+                    checkboxes = document.getElementsByName(\'edom_0_process_tahun[]\');
+                    var length = checkboxes.length;
+                    for (var n = 0; n < length; n++) {
+                        checkboxes[n].checked = source.checked;
+                    }
+                }
+            </script>';
+        $data['html'] .= '<table class="laporan">';
+        $data['html'] .= '<tr><th><input type="checkbox" onClick="toggle(this)"></th><th style="width:60px;">Tahun</th><th>Terakhir Diproses</th></tr>';
+        foreach ($list_tahun as $obj) {
+            $selected = '';
+            if (is_array($sess_tahun)) {
+                if (in_array($obj->tahun, $sess_tahun) ) {
+                    $selected = ' checked="checked"';
+                }
+            }
+            $last_updated = $this->mlaporan->edom_0_get_last_updated_by_tahun($obj->tahun);
+            $data['html'] .= '<tr><td><input type="checkbox" name="edom_0_process_tahun[]" value="'.$obj->tahun.'"'.$selected.'></td><td style="text-align:center;">'.$obj->deskripsi.'</td><td>'.$last_updated.'</td></tr>';
+        }
+        $data['html'] .= '<tr><td colspan="3" style="text-align:center;"><input name="submit" type="submit" value="Proses" class="Proses"></td></tr>';
+        $data['html'] .= '</table>';
+        
         $data['html'] .= '</form>';
+        
+        $data['html'] .= '<script language="JavaScript">
+                $(".Proses").click(function(){
+                    vex.open({
+                    content: \'Sedang Memproses ...\',
+                    showCloseButton: false,
+                    overlayClosesOnClick: false,
+                    overlayCSS: {},
+                });});
+                $(document).ready(function(){vex.close();});
+            </script>';
         
         $this->load->view('laporan/laporan',$data);
     }
@@ -227,8 +282,12 @@ class Laporan extends CI_Controller {
         //PRINT
         //$data['html'] = '';
         //$data['html'] = '<div class="no-print" style="display:scroll;position:fixed;z-index:99999;background:white;padding:3px 3px 3px 3px;"><a href="#" onclick="window.print()"><img src="'.base_url('/assets/img/print-icon.png').'"></a></div>';
-        $data['html'] = '<div class="no-print" style="display:scroll;position:fixed;z-index:99999;background:white;padding:3px 3px 3px 3px;"><a href="'.site_url('laporan/edom_0_pdf').'"><img src="'.base_url('/assets/img/pdf-icon.png').'"></a></div>';
-        
+        if (empty($sess_tahun)) {
+            $data['html'] = '';
+        } else {
+            $data['html'] = '<div class="no-print" style="display:scroll;position:fixed;z-index:99999;background:white;padding:3px 3px 3px 3px;"><a href="'.site_url('laporan/edom_0_pdf').'"><img src="'.base_url('/assets/img/pdf-icon.png').'"></a></div>';
+        }
+            
         $data['html'] .= $html_css.'<form method="POST" action="'.site_url('laporan/edom_0').'">';
         $data['html'] .= '<table><tr>';
         $data['html'] .= '<td class="no-print" align="right">Tahun</td><td class="no-print" style="width:10px;text-align:center;">:</td><td class="no-print"><select name="edom_0_tahun[]" multiple="multiple">';
@@ -539,22 +598,40 @@ class Laporan extends CI_Controller {
             //print_r($arr_nilai);
         //}
         if ($format == 'PDF') {
-            $html_data = str_replace('&#8594;', '-', $html_data);
-            return $html_data;
+            $obj_pdf = new stdClass();
+            $obj_pdf->isi = $html_data = str_replace('&#8594;', '-', $html_data);
+            
+            $last_temp = str_replace('-', ' ', $last_update);
+            $last_temp = str_replace(':', ' ', $last_temp);
+            $last_temp = str_replace(' ', '', $last_temp);
+            $obj_pdf->name = $last_temp;
+            
+            foreach ($sess_tahun as $vl) {
+                $isi_tahun = $vl.', ';
+            }
+            $isi_tahun = substr($isi_tahun, 0, (strlen($isi_tahun)-2));
+            $obj_pdf->tahun = $isi_tahun;
+            
+            return $obj_pdf;
         }
         $this->load->view('laporan/laporan',$data);
     }
     
     public function edom_0_pdf() {
-        //set_time_limit(0);
-        require_once('/assets/html2pdf/html2pdf.class.php');
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+        
+        require_once($_SERVER['DOCUMENT_ROOT'].'/kuesioner/assets/html2pdf/html2pdf.class.php');
         $html2pdf = new HTML2PDF('L','A4','en');
-        $content = '<page backbottom="5mm" style="font-size:10px;"><page_footer>[[page_cu]]/[[page_nb]]</page_footer>'.$this->edom_0('PDF');
+        $temp_obj = $this->edom_0('PDF');
+        $content = '<page backtop="10mm" backbottom="5mm" style="font-size:10px;">
+            <page_header>LAPORAN EDOM<br/>Tahun : '.$temp_obj->tahun.'</page_header>
+            <page_footer>[[page_cu]]/[[page_nb]]</page_footer>'.$temp_obj->isi;
         $content .= '</page>';
         //print_r(html_escape($content));
         //exit();
         $html2pdf->WriteHTML($content);
-        $html2pdf->Output('exemple.pdf');
+        $html2pdf->Output('EDOM_ALL_'.$temp_obj->name.'.pdf');
     }
     
     //per dosen per mata kuliah

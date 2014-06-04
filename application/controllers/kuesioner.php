@@ -59,7 +59,7 @@ class Kuesioner extends CI_Controller {
                 //print(0);
                 return FALSE;
             }
-            //exit();
+            exit();
         }
         $index = 1;
         $html_kuesioner = '<table class="bordered">';
@@ -147,6 +147,10 @@ class Kuesioner extends CI_Controller {
     }
     
     public function start($enc_from_lists = NULL) {
+        //session untuk refil form
+        $arr_refill = $this->session->userdata('kuesioner_refill');
+        //print_r($arr_refill);
+        
         $dec_from_lists = $this->encrypt->decode(url_safe_decode($enc_from_lists));
         $arr_dec = explode('/', $dec_from_lists);
         $id_periode = $arr_dec[0];
@@ -309,11 +313,31 @@ class Kuesioner extends CI_Controller {
                     //AMRNEEDTOIMPROVE : value=$i ?? >>> id_pilihan
                     $arr_val = $this->mkuesioner->get_all_value_pilihan($obj->id_grup_pilihan);
                     //print_r($arr_val);
+                    
+                    //session untuk refil form
+                    $jawaban_refill = NULL;
+                    $jawaban_refill2 = NULL;
+                    if ((is_array($arr_refill)) && (array_key_exists($obj->id_pertanyaan, $arr_refill))) {
+                        if ($arr_refill[$obj->id_pertanyaan]->tipe == 'pilihan') {
+                            $jawaban_refill = $arr_refill[$obj->id_pertanyaan]->jawaban;
+                            if (!empty($obj->jml_pilihan2)) {
+                                $jawaban_refill2 = $arr_refill[$obj->id_pertanyaan]->jawaban2;
+                            }
+                        }
+                    }
+                    
                     for ($i = 1; $i <= $obj->jml_pilihan; $i++) {
                         $cause_config = '';
                         if (array_key_exists('dflt_pilihan',$config_kuesioner)) {
                             if (intval($config_kuesioner['dflt_pilihan']) == $i) {
                                 $cause_config = ' checked="true"';
+                            }
+                            
+                            //session untuk refil form
+                            if (!empty($jawaban_refill)) {
+                                if ($jawaban_refill == $i) {
+                                    $cause_config = ' checked="true"';
+                                }
                             }
                         }
                         $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val[($i-1)]->id_pilihan).'"'.$cause_config.'></td>';
@@ -327,8 +351,15 @@ class Kuesioner extends CI_Controller {
                         for ($i = 1; $i <= $obj->jml_pilihan2; $i++) {
                             $cause_config = '';
                             if (array_key_exists('dflt_pilihan2',$config_kuesioner)) {
-                                if ($config_kuesioner['dflt_pilihan2'] == $i) {
+                                if (intval($config_kuesioner['dflt_pilihan2']) == $i) {
                                     $cause_config = ' checked="true"';
+                                }
+                                
+                                //session untuk refil form
+                                if (!empty($jawaban_refill2)) {
+                                    if ($jawaban_refill2 == $i) {
+                                        $cause_config = ' checked="true"';
+                                    }
                                 }
                             }
                             $html_radio .= '<td><input type="radio" name="'.$enc_id_pertanyaan.'" value="'.$this->encrypt->encode($arr_val2[($i-1)]->id_pilihan).'"'.$cause_config.'></td>';
@@ -337,14 +368,24 @@ class Kuesioner extends CI_Controller {
                     //$html_pertanyaan .= '<td>'.$html_radio.'</td>';
                     $html_pertanyaan .= $html_radio;
                 } else if ($obj->tipe == 'isian') {
+                    $jawaban_refill3 = NULL;
+                    if ((is_array($arr_refill)) && (array_key_exists($obj->id_pertanyaan, $arr_refill))) {
+                        if ($arr_refill[$obj->id_pertanyaan]->tipe == 'isian') {
+                            $jawaban_refill3 = $arr_refill[$obj->id_pertanyaan]->jawaban;
+                        }
+                    }
                     $enc_id_pertanyaan = $this->encrypt->encode('tanya'.$obj->id_pertanyaan.'tanya'.$obj->tipe);
-                    $html_pertanyaan .= '</tr><tr><td></td><td><textarea class="width-set3" name="'.$enc_id_pertanyaan.'"></textarea></td><td colspan="'.$for_colspan.'"></td>';
+                    $html_pertanyaan .= '</tr><tr><td></td><td><textarea class="width-set3" name="'.$enc_id_pertanyaan.'">'.$jawaban_refill3.'</textarea></td><td colspan="'.$for_colspan.'"></td>';
                 }
                 $html_pertanyaan .= '</tr>';
             }
         }
         $html_pertanyaan .= '</table>';
         $data['html_form'] .= $html_pertanyaan.'<div class="centered"><input class="button padding-line" type="submit" value="Simpan"></div></form>';
+        
+        //session untuk refil form
+        $this->session->unset_userdata('kuesioner_refill');
+        
         $this->load->view('kuesioner/form_kuesioner',$data);
     }
     
@@ -457,6 +498,10 @@ class Kuesioner extends CI_Controller {
             $data['html'] .= '<tr><td>Harap mengisi '.$nama_kuesioner.' dengan benar.</td></tr>';
             $data['html'] .= '<tr class="centered"><td><a class="button boxed" href="'.site_url('/kuesioner/start/'.$previous_url_data).'">Kembali</a></td></tr>';
             $data['html'] .= '</table>';
+            
+            //session untuk refil form
+            $this->session->set_userdata('kuesioner_refill', $arr_jawaban);
+            
             $this->load->view('kuesioner/message_kuesioner',$data);
         } else {
             //AMRNOTE--START: for assign _CODE_SET_

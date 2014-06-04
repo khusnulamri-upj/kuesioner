@@ -22,6 +22,25 @@ class mlaporan extends CI_Model {
         return FALSE;
     }
     
+    function edom_0_get_last_updated_by_tahun($tahun = NULL) {
+        $tbl_laporan = 'edom_laporan';
+        if ($tahun == NULL) {
+            return FALSE;
+        } else {
+            $db_dflt = $this->load->database('default', TRUE);
+            $sql = "SELECT MAX(a.created_at) AS last_updated
+                FROM ".$tbl_laporan." a
+                WHERE a.modified_at IS NULL
+                AND a.TahunID = ".$tahun;
+            $query = $db_dflt->query($sql);
+            $db_dflt->close();
+            if ($query->num_rows() == 1) {
+                return $query->row()->last_updated;
+            }
+        }
+        return FALSE;
+    }
+    
     function edom_0_get_processed_data($arr_tahun = NULL) {
         $tbl_laporan = 'edom_laporan';
         $in_tahun = "IN (";
