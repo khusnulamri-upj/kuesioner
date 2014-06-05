@@ -14,29 +14,6 @@ class Kuesioner extends CI_Controller {
         //$this->edom_is_exist();
     }
     
-    /*public function lists() {
-        $this->load->model('mKuesioner');
-        $list_kuesioner = $this->mKuesioner->list_active_kuesioner();
-        //print_r($list_kuesioner);
-        if (empty($list_kuesioner)) {
-            exit();
-            //redirect($this->config->item('kuesioner_app_base'));
-        }
-        $index = 0;
-        $html_kuesioner = '<table>';
-        foreach($list_kuesioner as $obj) {
-            if (!empty($obj->deskripsi)) {
-                $html_kuesioner .= '<tr>';
-                //$html_kuesioner .= '<td align="right">'.++$index.'</td><td><a href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
-                $html_kuesioner .= '<td><a class="width-set1 button" href="'.site_url('kuesioner/start/'.url_safe_encode($this->encrypt->encode($obj->id_periode.'/'.$obj->id_kuesioner.'/'.$obj->custom_data))).'">'.$obj->deskripsi.'</a></td>';
-                $html_kuesioner .= '</tr>';
-            }
-        }
-        $html_kuesioner .= '</table>';
-        $data['html_form'] = $html_kuesioner;
-        $this->load->view('kuesioner/list_kuesioner',$data);
-    }*/
-    
     public function edom_is_exist() {
         print_r($this->edom('is_exist'));
     }
@@ -96,6 +73,8 @@ class Kuesioner extends CI_Controller {
                         $arr_throwed_data2 = explode('=', $val);
                         $$arr_throwed_data2[0] = $arr_throwed_data2[1];
                     }
+                    
+                    //KHUSUS EDOM
                     if (($is_same == 1) && ($val_row_before == $obj->is_filled)) {
                         $enable_kuesioner = 'class="disabled-button boxed" href="#"';
                         $btn_enabled = FALSE;
@@ -114,7 +93,7 @@ class Kuesioner extends CI_Controller {
                     if ($mata_kuliah_before == $mata_kuliah) {
                         $no = '';
                         $index--;
-                        $deskripsi = str_replace($mata_kuliah, '', $deskripsi);
+                        $deskripsi = str_replace($mata_kuliah, $kuesioner, $deskripsi);
                         if (($btn_enabled == TRUE) && ($session2_begin == FALSE) && ($is_same == 1)) {
                             $enable_kuesioner = 'class="disabled-button boxed" href="#"';
                             $is_exist = 'FALSE';
@@ -130,7 +109,13 @@ class Kuesioner extends CI_Controller {
                 }
                 $html_kuesioner .= '<tr'.$style1.'>';
                 //$html_kuesioner .= '<td>'.$no.'</td><td>'.$deskripsi.'</td><td><a '.$enable_kuesioner.'>'.$btn_text.'</a></td>';
-                $html_kuesioner .= '<td class="width-set2">'.$no.'</td><td>'.$deskripsi.'</td><td><a '.$enable_kuesioner.'>'.$btn_text.'</a></td>';
+                
+                //2 baris (baris 1 UTS, baris 2 UAS)
+                //$html_kuesioner .= '<td class="width-set2">'.$no.'</td><td>'.$deskripsi.'</td><td><a '.$enable_kuesioner.'>'.$btn_text.'</a></td>';
+                
+                //2 kolom
+                $html_kuesioner .= '<td class="width-set2">'.$no.'</td><td>'.$deskripsi.'</td><td><a '.$enable_kuesioner.'>'.$btn_text.'</a><td><a '.$enable_kuesioner.'>'.$btn_text.'</a></td>';
+                
                 $html_kuesioner .= '</tr>';
             }
         }
@@ -395,7 +380,6 @@ class Kuesioner extends CI_Controller {
         $id_periode = NULL;
         $id_kuesioner = NULL;
         $respondent_id = NULL;
-        //print_r($this->input->post());
         foreach ($this->input->post() as $key => $value) {
             $index = $this->encrypt->decode($key);
             $is_previous_url_data = strpos($index, 'previous_url_data');
@@ -404,22 +388,6 @@ class Kuesioner extends CI_Controller {
             $is_respondent_id = strpos($index, 'respondent_id');
             $is_pertanyaan = strpos($index, 'tanya');
             
-            /*$is_custom_data = strpos($index, 'custom_data');
-            if ($is_custom_data !== FALSE) {
-                if (strlen($index) == 'custom_data') {
-                    $is_custom_data = TRUE;
-                } else {
-                    $is_custom_data = FALSE;
-                }
-            }
-            $is_custom_data2 = strpos($index, strlen('custom_data2'));
-            if ($is_custom_data2 !== FALSE) {
-                if (strlen($index) == 'custom_data2') {
-                    $is_custom_data2 = TRUE;
-                } else {
-                    $is_custom_data2 = FALSE;
-                }
-            }*/
             $is_custom_data = FALSE;
             if ($index == 'custom_data') {
                 $is_custom_data = TRUE;
@@ -488,12 +456,11 @@ class Kuesioner extends CI_Controller {
                 unset($is_pass[$key]);
             }
         }
-        if (count($is_pass) > 0) {
-            if (!empty($this->session->userdata('kuesioner_thank_you'))) {
-                $nama_kuesioner = $this->session->userdata('kuesioner_thank_you');
-            } else {
-                $nama_kuesioner = 'kuesioner';
-            }
+	$nama_kuesioner = $this->session->userdata('kuesioner_thank_you');
+	if (empty($nama_kuesioner)) {
+            $nama_kuesioner = 'kuesioner';
+	}
+	if (count($is_pass) > 0) {
             $data['html'] = '<table>';
             $data['html'] .= '<tr><td>Harap mengisi '.$nama_kuesioner.' dengan benar.</td></tr>';
             $data['html'] .= '<tr class="centered"><td><a class="button boxed" href="'.site_url('/kuesioner/start/'.$previous_url_data).'">Kembali</a></td></tr>';
@@ -504,7 +471,7 @@ class Kuesioner extends CI_Controller {
             
             $this->load->view('kuesioner/message_kuesioner',$data);
         } else {
-            //AMRNOTE--START: for assign _CODE_SET_
+            //AMRNOTE-START: for assign _CODE_SET_
             // _CODE_SET_utsatauuas
             if ($custom_data2 == 2) {
                 $edom_timing = sisfo_is_uts_or_uas(); //UTS or UAS
@@ -527,7 +494,7 @@ class Kuesioner extends CI_Controller {
                             if (isset($$var3)) {
                                 $str_to_save3 = str_replace($value, $$var3, $str_to_save3);
                             } else {
-                                //exit('#Check your error. @KsnFnsh');
+                                exit('#Check your error. @KsnFnsh');
                             }
                         }
                     }
@@ -541,11 +508,7 @@ class Kuesioner extends CI_Controller {
             //print_r($respondent_id);
             //print_r($arr_jawaban);
             //redirect(site_url('/kuesioner'));
-            if (!empty($this->session->userdata('kuesioner_thank_you'))) {
-                $nama_kuesioner = $this->session->userdata('kuesioner_thank_you');
-            } else {
-                $nama_kuesioner = 'kuesioner';
-            }
+			
             $data['html'] = '<table>';
             $data['html'] .= '<tr><td>Terima kasih telah mengisi '.$nama_kuesioner.' ini.</td></tr>';
             $data['html'] .= '<tr class="centered"><td><a class="button boxed" href="'.site_url('/kuesioner').$this->session->userdata('kuesioner_home').'">Lanjut</a></td></tr>';
@@ -559,6 +522,3 @@ class Kuesioner extends CI_Controller {
         echo '#Affected Rows : '.$this->mkuesioner->sync_jawaban_to_jawaban_header($id_periode);
     }
 }
-
-/* End of file welcome.php */
-/* Location: ./application/controllers/welcome.php */

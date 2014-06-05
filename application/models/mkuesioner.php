@@ -126,14 +126,14 @@ class mkuesioner extends CI_Model {
     
     function edom_list_active_kuesioner() {
         $db_dflt = $this->load->database('default', TRUE);
-        /*$sql = "SELECT *
-            FROM periode p
-            LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
-            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW() AND mk.shortname = 'EDOM'";*/
         $sql = "SELECT *
             FROM periode p
             LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
-            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW()";
+            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW() AND mk.shortname = 'EDOM'";
+        /*$sql = "SELECT *
+            FROM periode p
+            LEFT OUTER JOIN master_kuesioner mk ON mk.id_kuesioner = p.id_kuesioner
+            WHERE p.waktu_min <= NOW() AND p.waktu_maks >= NOW()";*/
         $query = $db_dflt->query($sql);
         $db_dflt->close();
         $return = array();
